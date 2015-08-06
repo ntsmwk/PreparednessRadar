@@ -1,7 +1,6 @@
 package at.jku.cis.preparednessradar;
 
 
-
 import android.content.IntentSender;
 import android.location.Location;
 import android.os.Bundle;
@@ -15,6 +14,7 @@ import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
@@ -22,7 +22,7 @@ import com.google.android.gms.maps.model.MarkerOptions;
 public class MapPane extends FragmentActivity implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
-        LocationListener {
+        LocationListener, OnMapClickListener {
 
     public static final String TAG = MapPane.class.getSimpleName();
 
@@ -31,11 +31,10 @@ public class MapPane extends FragmentActivity implements
      * This code is returned in Activity.onActivityResult
      */
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
-
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
-
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest;
+    private int i = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -71,6 +70,7 @@ public class MapPane extends FragmentActivity implements
             LocationServices.FusedLocationApi.removeLocationUpdates(mGoogleApiClient, this);
             mGoogleApiClient.disconnect();
         }
+
     }
 
     /**
@@ -99,6 +99,7 @@ public class MapPane extends FragmentActivity implements
                 setUpMap();
             }
         }
+
     }
 
     /**
@@ -108,7 +109,16 @@ public class MapPane extends FragmentActivity implements
      * This should only be called once and when we are sure that {@link #mMap} is not null.
      */
     private void setUpMap() {
-        mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker"));
+        mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
+        mMap.setOnMapClickListener(new OnMapClickListener() {
+
+            @Override
+            public void onMapClick(LatLng point) {
+                mMap.addMarker(new MarkerOptions().position(point).title("Touch Marker"));
+            }
+        });
+
+        //mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker" + ++i));
     }
 
     private void handleNewLocation(Location location) {
@@ -116,16 +126,9 @@ public class MapPane extends FragmentActivity implements
 
         double currentLatitude = location.getLatitude();
         double currentLongitude = location.getLongitude();
-
         LatLng latLng = new LatLng(currentLatitude, currentLongitude);
 
-        //mMap.addMarker(new MarkerOptions().position(new LatLng(currentLatitude, currentLongitude)).title("Current Location"));
-        MarkerOptions options = new MarkerOptions()
-                .position(latLng)
-                .title("I am here!");
-        mMap.addMarker(options);
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(latLng));
-        mMap.moveCamera(CameraUpdateFactory.zoomBy(14));
+        mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
     }
 
     @Override
@@ -133,8 +136,7 @@ public class MapPane extends FragmentActivity implements
         Location location = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
         if (location == null) {
             LocationServices.FusedLocationApi.requestLocationUpdates(mGoogleApiClient, mLocationRequest, this);
-        }
-        else {
+        } else {
             handleNewLocation(location);
         }
     }
@@ -175,6 +177,12 @@ public class MapPane extends FragmentActivity implements
 
     @Override
     public void onLocationChanged(Location location) {
-        handleNewLocation(location);
+        //handleNewLocation(location);
+    }
+
+
+    @Override
+    public void onMapClick(LatLng latLng) {
+        mMap.addMarker(new MarkerOptions().position(latLng).title("MarkerTouch"));
     }
 }
