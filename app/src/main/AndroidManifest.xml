@@ -24,7 +24,7 @@
             android:value="@string/google_maps_key" />
 
         <activity
-            android:name=".MapPane"
+            android:name=".view.MapPane"
             android:label="@string/title_activity_map_pane" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

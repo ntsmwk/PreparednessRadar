@@ -1,4 +1,4 @@
-package at.jku.cis.preparednessradar;
+package at.jku.cis.preparednessradar.view;
 
 
 import android.content.Context;
@@ -30,6 +30,8 @@ import com.samsung.android.sdk.pen.document.SpenPageDoc;
 import com.samsung.android.sdk.pen.engine.SpenSurfaceView;
 
 import java.io.IOException;
+
+import at.jku.cis.preparednessradar.R;
 
 public class MapPane extends FragmentActivity implements
         GoogleApiClient.ConnectionCallbacks,
