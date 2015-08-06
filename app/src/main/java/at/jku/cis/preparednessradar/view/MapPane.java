@@ -1,4 +1,4 @@
-package at.jku.cis.preparednessradar;
+package at.jku.cis.preparednessradar.view;
 
 
 import android.content.IntentSender;
@@ -18,6 +18,8 @@ import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+
+import at.jku.cis.preparednessradar.R;
 
 public class MapPane extends FragmentActivity implements
         GoogleApiClient.ConnectionCallbacks,
