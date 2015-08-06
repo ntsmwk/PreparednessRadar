@@ -6,11 +6,11 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 import at.jku.cis.preparednessradar.contract.LocationContract;
 
-public class LocationDbHelper extends SQLiteOpenHelper {
+public class LocationContractDbHelper extends SQLiteOpenHelper {
     private static final int DATABASE_VERSION = 2;
     private static final String DATABASE_NAME = "LocationSqlLite.db";
 
-    public LocationDbHelper(Context context) {
+    public LocationContractDbHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
     }
 
