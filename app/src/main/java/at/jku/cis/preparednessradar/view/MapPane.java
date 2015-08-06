@@ -1,11 +1,16 @@
 package at.jku.cis.preparednessradar.view;
 
 
+import android.content.Context;
 import android.content.IntentSender;
+import android.graphics.Rect;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.view.Display;
+import android.widget.RelativeLayout;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -18,6 +23,13 @@ import com.google.android.gms.maps.GoogleMap.OnMapClickListener;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.samsung.android.sdk.SsdkUnsupportedException;
+import com.samsung.android.sdk.pen.Spen;
+import com.samsung.android.sdk.pen.document.SpenNoteDoc;
+import com.samsung.android.sdk.pen.document.SpenPageDoc;
+import com.samsung.android.sdk.pen.engine.SpenSurfaceView;
+
+import java.io.IOException;
 
 import at.jku.cis.preparednessradar.R;
 
@@ -27,34 +39,45 @@ public class MapPane extends FragmentActivity implements
         LocationListener, OnMapClickListener {
 
     public static final String TAG = MapPane.class.getSimpleName();
-
-    /*
-     * Define a request code to send to Google Play services
-     * This code is returned in Activity.onActivityResult
-     */
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
     private GoogleMap mMap; // Might be null if Google Play services APK is not available.
     private GoogleApiClient mGoogleApiClient;
     private LocationRequest mLocationRequest;
-    private int i = 1;
+    private Context mContext;
+    private SpenNoteDoc mSpenNoteDoc;
+    private SpenPageDoc mSpenPageDoc;
+    private SpenSurfaceView mSpenSurfaceView;
+    private boolean isSpenFeatureEnabled = false;
+    private Spen spenPackage = new Spen();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_map_pane);
+        mContext = this;
         setUpMapIfNeeded();
-
         mGoogleApiClient = new GoogleApiClient.Builder(this)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
                 .build();
 
-        // Create the LocationRequest object
         mLocationRequest = LocationRequest.create()
                 .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY)
                 .setInterval(10 * 1000)        // 10 seconds, in milliseconds
                 .setFastestInterval(1 * 1000); // 1 second, in milliseconds
+        try {
+            spenPackage.initialize(this, 5, Spen.SPEN_STATIC_LIB_MODE);
+            isSpenFeatureEnabled = spenPackage.isFeatureEnabled(Spen.DEVICE_PEN);
+        } catch (SsdkUnsupportedException e) {
+            Toast.makeText(mContext, "This device does not support S pen.", Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
+            finish();
+        } catch (Exception e1) {
+            Toast.makeText(mContext, "Cannot initialize Pen.", Toast.LENGTH_SHORT).show();
+            e1.printStackTrace();
+            finish();
+        }
     }
 
     @Override
@@ -75,21 +98,6 @@ public class MapPane extends FragmentActivity implements
 
     }
 
-    /**
-     * Sets up the map if it is possible to do so (i.e., the Google Play services APK is correctly
-     * installed) and the map has not already been instantiated.. This will ensure that we only ever
-     * call {@link #setUpMap()} once when {@link #mMap} is not null.
-     * <p/>
-     * If it isn't installed {@link SupportMapFragment} (and
-     * {@link com.google.android.gms.maps.MapView MapView}) will show a prompt for the user to
-     * install/update the Google Play services APK on their device.
-     * <p/>
-     * A user can return to this FragmentActivity after following the prompt and correctly
-     * installing/updating/enabling the Google Play services. Since the FragmentActivity may not
-     * have been completely destroyed during this process (it is likely that it would only be
-     * stopped or paused), {@link #onCreate(Bundle)} may not be called again so we should call this
-     * method in {@link #onResume()} to guarantee that it will be called.
-     */
     private void setUpMapIfNeeded() {
         // Do a null check to confirm that we have not already instantiated the map.
         if (mMap == null) {
@@ -104,12 +112,6 @@ public class MapPane extends FragmentActivity implements
 
     }
 
-    /**
-     * This is where we can add markers or lines, add listeners or move the camera. In this case, we
-     * just add a marker near Africa.
-     * <p/>
-     * This should only be called once and when we are sure that {@link #mMap} is not null.
-     */
     private void setUpMap() {
         mMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
         mMap.setOnMapClickListener(new OnMapClickListener() {
@@ -119,8 +121,6 @@ public class MapPane extends FragmentActivity implements
                 mMap.addMarker(new MarkerOptions().position(point).title("Touch Marker"));
             }
         });
-
-        //mMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Marker" + ++i));
     }
 
     private void handleNewLocation(Location location) {
@@ -187,4 +187,48 @@ public class MapPane extends FragmentActivity implements
     public void onMapClick(LatLng latLng) {
         mMap.addMarker(new MarkerOptions().position(latLng).title("MarkerTouch"));
     }
+
+    private void initializeSPen(Context context) {
+
+    }
+
+    private void createPenView() {
+        // Create Pen View.
+        RelativeLayout spenViewLayout = (RelativeLayout) findViewById(R.id.map);
+        mSpenSurfaceView = new SpenSurfaceView(mContext);
+        if (mSpenSurfaceView == null) {
+            Toast.makeText(mContext, "Cannot create new SpenSurfaceView.", Toast.LENGTH_SHORT).show();
+            finish();
+        }
+        spenViewLayout.addView(mSpenSurfaceView); // Get the dimensions of the screen. Display display = getWindowManager().getDefaultDisplay(); Rect rect = new Rect(); display.getRectSize(rect);
+
+        // Get the dimensions of the screen.
+        Display display = getWindowManager().getDefaultDisplay();
+        Rect rect = new Rect();
+        display.getRectSize(rect);
+
+        // Create SpenNoteDoc.
+        try {
+            mSpenNoteDoc = new SpenNoteDoc(mContext, rect.width(), rect.height());
+        } catch (IOException e) {
+            Toast.makeText(mContext, "Cannot create new NoteDoc.", Toast.LENGTH_SHORT).show();
+            e.printStackTrace();
+            finish();
+        } catch (Exception e) {
+            e.printStackTrace();
+            finish();
+        }
+        // After adding a page to NoteDoc, get an instance and set it
+        // as a member variable.
+        mSpenPageDoc = mSpenNoteDoc.appendPage();
+        mSpenPageDoc.setBackgroundColor(0xFFD6E6F5);
+        mSpenPageDoc.clearHistory();
+        // Set PageDoc to View.
+        mSpenSurfaceView.setPageDoc(mSpenPageDoc, true);
+        if (isSpenFeatureEnabled == false) {
+            mSpenSurfaceView.setToolTypeAction(SpenSurfaceView.TOOL_FINGER, SpenSurfaceView.ACTION_STROKE);
+            Toast.makeText(mContext, "Device does not support S pen. \n You can draw strokes with your finger", Toast.LENGTH_SHORT).show();
+        }
+    }
+
 }
