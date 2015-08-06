@@ -24,6 +24,4 @@ dependencies {
     compile 'com.android.support:appcompat-v7:22.2.1'
     compile 'com.google.android.gms:play-services:7.5.0'
     compile 'com.google.android.gms:play-services-maps:7.5.0'
-    compile files('libs/pen-v3.1.8.jar')
-    compile files('libs/sdk-v1.0.0.jar')
 }

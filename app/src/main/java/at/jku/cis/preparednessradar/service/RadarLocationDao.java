@@ -8,8 +8,8 @@ import android.database.sqlite.SQLiteDatabase;
 import java.util.ArrayList;
 import java.util.List;
 
-import at.jku.cis.preparednessradar.model.RadarLocation;
 import at.jku.cis.preparednessradar.database.SqlDatabaseHelper;
+import at.jku.cis.preparednessradar.model.RadarLocation;
 
 import static at.jku.cis.preparednessradar.model.RadarLocation.TABLE_NAME;
 import static at.jku.cis.preparednessradar.model.RadarLocation.TITLE;
