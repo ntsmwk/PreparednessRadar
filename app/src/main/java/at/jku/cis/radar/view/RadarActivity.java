@@ -151,20 +151,9 @@ public class RadarActivity extends FragmentActivity implements
                 double latFactor = calculateLatitudeDifference(northeast, southwest) / rect.width();
                 double lngFactor = calculateLongitudeDifference(northeast, southwest) / rect.height();
 
-                //LatLng currentPos = new LatLng(-(motionEvent.getX() * calculateLatitudeDifference(northeast, southwest)/rect.height()), (motionEvent.getY() * calculateLongitudeDifference(northeast, southwest)/rect.width()));
-                LatLng currentPos = new LatLng(northwest.latitude + motionEvent.getX() * latFactor, southwest.longitude + motionEvent.getY() * lngFactor);
-                //LatLng currentPos2 = new LatLng(northwest.latitude - motionEvent.getX() * latFactor, southwest.longitude + motionEvent.getY() * lngFactor);
-                //LatLng currentPos3 = new LatLng(-(-calculateLatitudeDifference(northeast, southwest) / 2 - motionEvent.getX() * latFactor), -calculateLongitudeDifference(northeast, southwest) / 2 + motionEvent.getY() * lngFactor);
-                // LatLng currentPos2 = new LatLng(northeast.latitude-(motionEvent.getY() * calculateLongitudeDifference(northeast, southwest) / rect.width()), northeast.latitude+(motionEvent.getX() * calculateLatitudeDifference(northeast, southwest) / rect.height()));
-                //LatLng currentPos3 = new LatLng((motionEvent.getY() * calculateLongitudeDifference(northeast, southwest) / rect.width())+2, (motionEvent.getX() * calculateLatitudeDifference(northeast, southwest) / rect.height())+2);
-                //  LatLng currentPos4 = new LatLng(-((motionEvent.getX() * latFactor)+10), -(-(motionEvent.getY() * lngFactor)+10));
-                googleMap.addMarker(new MarkerOptions().position(currentPos).title("abc Pos1"));
-                //googleMap.addMarker(new MarkerOptions().position(currentPos2).title("abc Pos2"));
-                //googleMap.addMarker(new MarkerOptions().position(currentPos3).title("abc Pos3"));
-                googleMap.addMarker(new MarkerOptions().position(new LatLng(0, 0)).title("Nullpunkt")
-                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_BLUE)));
-                //googleMap.addMarker(new MarkerOptions().position(currentPos4).title("abc Pos4"));
-                //googleMap.addMarker(new MarkerOptions().position(curScreen.getCenter()).title("Factor: " + latFactor + "     " + lngFactor));
+                LatLng currentPos1 = new LatLng(northwest.latitude - (motionEvent.getY() * calculateLatitudeDifference(northeast, southwest) / rect.height()), southwest.longitude + motionEvent.getX() * calculateLongitudeDifference(northeast, southwest)/rect.width());
+
+                googleMap.addMarker(new MarkerOptions().position(currentPos1).title("abc Pos1"));
                 Log.i(TAG, "Northwest: " + northwest.latitude + " " + northwest.longitude);
                 Log.i(TAG, "Northeast: " + northeast.latitude + " " + northeast.longitude);
                 Log.i(TAG, "Southwest: " + southwest.latitude + " " + southwest.longitude);
