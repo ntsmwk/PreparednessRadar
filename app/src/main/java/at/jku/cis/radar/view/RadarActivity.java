@@ -3,6 +3,7 @@ package at.jku.cis.radar.view;
 import android.content.IntentSender;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
+import android.graphics.Point;
 import android.graphics.Rect;
 import android.location.Location;
 import android.os.Bundle;
@@ -21,16 +22,15 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptor;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.LatLngBounds;
-import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.PolylineOptions;
 import com.samsung.android.sdk.pen.Spen;
 import com.samsung.android.sdk.pen.document.SpenNoteDoc;
 import com.samsung.android.sdk.pen.document.SpenPageDoc;
 import com.samsung.android.sdk.pen.engine.SpenSurfaceView;
 import com.samsung.android.sdk.pen.engine.SpenTouchListener;
+
+import java.util.ArrayList;
 
 import at.jku.cis.radar.R;
 
@@ -40,6 +40,9 @@ public class RadarActivity extends FragmentActivity implements
         LocationListener {
     public static final String TAG = RadarActivity.class.getSimpleName();
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
+    private ArrayList<PolylineOptions> lines = new ArrayList<>();
+    private PolylineOptions currentLine = null;
+    private SpenPageDoc spenPageDoc;
 
     private View mapView;
     private GoogleMap googleMap;
@@ -93,7 +96,7 @@ public class RadarActivity extends FragmentActivity implements
         Rect rect = new Rect();
         getWindowManager().getDefaultDisplay().getRectSize(rect);
         spenNoteDoc = new SpenNoteDoc(this, rect.width(), rect.height());
-        SpenPageDoc spenPageDoc = spenNoteDoc.appendPage();
+        spenPageDoc = spenNoteDoc.appendPage();
 
         spenPageDoc.clearHistory();
         spenPageDoc.setBackgroundColor(Color.TRANSPARENT);
@@ -115,6 +118,7 @@ public class RadarActivity extends FragmentActivity implements
         googleApiClient.connect();
     }
 
+
     private GoogleApiClient buildGoogleApiClient() {
         GoogleApiClient.Builder googleApiClientBuilder = new GoogleApiClient.Builder(this);
         googleApiClientBuilder.addConnectionCallbacks(this);
@@ -123,7 +127,7 @@ public class RadarActivity extends FragmentActivity implements
         return googleApiClientBuilder.build();
     }
 
-    private synchronized void handleNewLocation(Location location) {
+    private void handleNewLocation(Location location) {
         Log.d(TAG, location.toString());
 
         double currentLatitude = location.getLatitude();
@@ -136,56 +140,23 @@ public class RadarActivity extends FragmentActivity implements
         spenSurfaceView.setTouchListener(new SpenTouchListener() {
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
-                LatLngBounds curScreen = googleMap.getProjection().getVisibleRegion().latLngBounds;
-                LatLng northeast = curScreen.northeast;
-                LatLng southwest = curScreen.southwest;
-                LatLng northwest = new LatLng(northeast.latitude, southwest.longitude);
+                if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                    currentLine = new PolylineOptions();
+                }
 
-                googleMap.addMarker(new MarkerOptions().position(northeast).title("northeast" + northeast.latitude + " " + northeast.longitude));
-                googleMap.addMarker(new MarkerOptions().position(southwest).title("southwest" + southwest.latitude + " " + southwest.longitude));
+                Point currentPosition = new Point((int) motionEvent.getX(), (int) motionEvent.getY());
+                LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
+                currentLine.add(currentLatLng);
 
-                googleMap.addMarker(new MarkerOptions().position(northwest).title("southwest" + southwest.latitude + " " + southwest.longitude));
-                //get Screen Size
-                Rect rect = new Rect();
-                getWindowManager().getDefaultDisplay().getRectSize(rect);
-                double latFactor = calculateLatitudeDifference(northeast, southwest) / rect.width();
-                double lngFactor = calculateLongitudeDifference(northeast, southwest) / rect.height();
-
-                LatLng currentPos1 = new LatLng(northwest.latitude - (motionEvent.getY() * calculateLatitudeDifference(northeast, southwest) / rect.height()), southwest.longitude + motionEvent.getX() * calculateLongitudeDifference(northeast, southwest)/rect.width());
-
-                googleMap.addMarker(new MarkerOptions().position(currentPos1).title("abc Pos1"));
-                Log.i(TAG, "Northwest: " + northwest.latitude + " " + northwest.longitude);
-                Log.i(TAG, "Northeast: " + northeast.latitude + " " + northeast.longitude);
-                Log.i(TAG, "Southwest: " + southwest.latitude + " " + southwest.longitude);
-                Log.i(TAG, "Factor: " + latFactor + " " + lngFactor);
-                Log.i(TAG, "Pen: " + motionEvent.getY() * latFactor + " " + motionEvent.getX() * lngFactor);
-                // Log.i(TAG, "Point: " + currentPos.latitude + " " + currentPos.longitude);
-                //TODO
+                if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                    googleMap.addPolyline(currentLine);
+                    lines.add(currentLine);
+                    spenPageDoc.removeAllObject();
+                    spenSurfaceView.update();
+                }
                 return false;
             }
         });
-
-    }
-
-    private double calculateLatitudeDifference(LatLng northeast, LatLng southwest) {
-        if (northeast.latitude > 0) {
-            return northeast.latitude - southwest.latitude;
-        } else {
-            return Math.abs(southwest.latitude) - Math.abs(northeast.latitude);
-        }
-    }
-
-    private double calculateLongitudeDifference(LatLng northeast, LatLng southwest) {
-        if (northeast.longitude > 0) {
-            return northeast.longitude - southwest.longitude;
-        } else {
-            return Math.abs(southwest.longitude) - Math.abs(northeast.longitude);
-        }
-    }
-
-
-    private LatLng getScreenLocation() {
-        return googleMap.getCameraPosition().target;
     }
 
     @Override
@@ -197,6 +168,7 @@ public class RadarActivity extends FragmentActivity implements
                     .setFastestInterval(1 * 1000) // 1 second, in milliseconds
                     .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
             LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest, this);
+
         } else {
             handleNewLocation(location);
         }
@@ -219,12 +191,6 @@ public class RadarActivity extends FragmentActivity implements
             Log.i(TAG, "Location services connection failed with code " + connectionResult.getErrorCode());
         }
     }
-
-    @Override
-    public void onLocationChanged(Location location) {
-        handleNewLocation(location);
-    }
-
 
     @Override
     protected void onResume() {
@@ -261,5 +227,10 @@ public class RadarActivity extends FragmentActivity implements
             }
             spenNoteDoc = null;
         }
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+
     }
 }
