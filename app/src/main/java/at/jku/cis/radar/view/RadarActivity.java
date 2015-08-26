@@ -118,7 +118,6 @@ public class RadarActivity extends FragmentActivity implements
         googleApiClient.connect();
     }
 
-
     private GoogleApiClient buildGoogleApiClient() {
         GoogleApiClient.Builder googleApiClientBuilder = new GoogleApiClient.Builder(this);
         googleApiClientBuilder.addConnectionCallbacks(this);
