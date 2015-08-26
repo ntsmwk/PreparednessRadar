@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context=".RadarActivity" >
+
+    <item
+        android:id="@+id/search"
+        android:orderInCategory="100"
+        android:title="@string/search"
+        app:showAsAction="always"
+        android:icon="@drawable/abc_ic_search_api_mtrl_alpha"
+        />
+    <item
+        android:id="@+id/changePen"
+        android:orderInCategory="100"
+        android:title="@string/changePen"
+        app:showAsAction="ifRoom"/>
+    <item
+        android:id="@+id/contact_us"
+        android:orderInCategory="100"
+        android:title="@string/contactus"
+        app:showAsAction="never"/>
+    <item
+        android:id="@+id/about"
+        android:orderInCategory="100"
+        android:title="@string/about"
+        app:showAsAction="never"/>
+
+</menu>

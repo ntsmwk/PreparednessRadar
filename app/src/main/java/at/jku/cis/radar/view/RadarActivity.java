@@ -8,7 +8,10 @@ import android.graphics.Rect;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.v4.app.FragmentActivity;
+import android.support.v7.app.ActionBarActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Menu;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.View;
@@ -40,7 +43,7 @@ import java.util.ArrayList;
 
 import at.jku.cis.radar.R;
 
-public class RadarActivity extends FragmentActivity implements
+public class RadarActivity extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
         LocationListener {
@@ -74,6 +77,12 @@ public class RadarActivity extends FragmentActivity implements
             throw new RuntimeException(e);
         }
         initalizeGoogleApiClient();
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu){
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        return true;
     }
 
     @Override
@@ -148,7 +157,6 @@ public class RadarActivity extends FragmentActivity implements
         }
         googleApiClient.connect();
     }
-
 
     private GoogleApiClient buildGoogleApiClient() {
         GoogleApiClient.Builder googleApiClientBuilder = new GoogleApiClient.Builder(this);
