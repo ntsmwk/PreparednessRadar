@@ -12,7 +12,9 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
+import android.widget.RelativeLayout;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -25,11 +27,15 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.PolylineOptions;
 import com.samsung.android.sdk.pen.Spen;
+import com.samsung.android.sdk.pen.SpenSettingPenInfo;
 import com.samsung.android.sdk.pen.document.SpenNoteDoc;
 import com.samsung.android.sdk.pen.document.SpenPageDoc;
+import com.samsung.android.sdk.pen.engine.SpenColorPickerListener;
 import com.samsung.android.sdk.pen.engine.SpenSurfaceView;
 import com.samsung.android.sdk.pen.engine.SpenTouchListener;
+import com.samsung.android.sdk.pen.settingui.SpenSettingPenLayout;
 
+import java.io.IOException;
 import java.util.ArrayList;
 
 import at.jku.cis.radar.R;
@@ -41,7 +47,6 @@ public class RadarActivity extends FragmentActivity implements
     public static final String TAG = RadarActivity.class.getSimpleName();
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
     private ArrayList<PolylineOptions> lines = new ArrayList<>();
-    private PolylineOptions currentLine = null;
     private SpenPageDoc spenPageDoc;
 
     private View mapView;
@@ -51,6 +56,7 @@ public class RadarActivity extends FragmentActivity implements
     private Spen spen = new Spen();
     private SpenNoteDoc spenNoteDoc;
     private SpenSurfaceView spenSurfaceView;
+    private SpenSettingPenLayout spenSettingView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -59,8 +65,10 @@ public class RadarActivity extends FragmentActivity implements
         intializeMapView();
         initalizeGoogleMap();
         try {
-            intializeSpenSurfaceView();
-            initializeMoveListener();
+            initalizeSpenSurfaceView();
+            initializeSpenNoteDoc();
+            initalizeColorPicker();
+            initializeTouchListener();
         } catch (Exception e) {
             Log.e(TAG, e.getMessage(), e);
             throw new RuntimeException(e);
@@ -85,14 +93,23 @@ public class RadarActivity extends FragmentActivity implements
         mapView = ((FrameLayout) getSupportMapFragment().getView()).getChildAt(0);
     }
 
-    private void intializeSpenSurfaceView() throws Exception {
+    private void initalizeSpenSurfaceView() throws Exception {
         spen.initialize(getApplicationContext());
         spenSurfaceView = new SpenSurfaceView(this);
         spenSurfaceView.setZOrderOnTop(true);
         SurfaceHolder surfaceHolder = spenSurfaceView.getHolder();
         surfaceHolder.setFormat(PixelFormat.TRANSPARENT);
-        ((FrameLayout) getSupportMapFragment().getView()).addView(spenSurfaceView);
 
+        RelativeLayout spenViewLayout = new RelativeLayout(this);
+        spenViewLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        spenSettingView = new SpenSettingPenLayout(this, new String(), spenViewLayout);
+        spenSettingView.setCanvasView(spenSurfaceView);
+        FrameLayout frameLayout = ((FrameLayout) getSupportMapFragment().getView());
+        frameLayout.addView(spenViewLayout);
+        frameLayout.addView(spenSurfaceView);
+    }
+
+    private void initializeSpenNoteDoc() throws IOException {
         Rect rect = new Rect();
         getWindowManager().getDefaultDisplay().getRectSize(rect);
         spenNoteDoc = new SpenNoteDoc(this, rect.width(), rect.height());
@@ -102,6 +119,20 @@ public class RadarActivity extends FragmentActivity implements
         spenPageDoc.setBackgroundColor(Color.TRANSPARENT);
         spenSurfaceView.setPageDoc(spenPageDoc, true);
         spenSurfaceView.update();
+    }
+
+    private void initalizeColorPicker() {
+        spenSurfaceView.setColorPickerListener(new SpenColorPickerListener() {
+            @Override
+            public void onChanged(int color, int x, int y) {
+                // Set the color from the Color Picker to the setting view.
+                if (spenSettingView != null) {
+                    SpenSettingPenInfo penInfo = spenSettingView.getInfo();
+                    penInfo.color = color;
+                    spenSettingView.setInfo(penInfo);
+                }
+            }
+        });
     }
 
     private void initalizeGoogleMap() {
@@ -136,8 +167,11 @@ public class RadarActivity extends FragmentActivity implements
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
     }
 
-    private void initializeMoveListener() {
+    private void initializeTouchListener() {
         spenSurfaceView.setTouchListener(new SpenTouchListener() {
+
+            private PolylineOptions currentLine = null;
+
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
@@ -193,6 +227,11 @@ public class RadarActivity extends FragmentActivity implements
     }
 
     @Override
+    public void onLocationChanged(Location location) {
+        handleNewLocation(location);
+    }
+
+    @Override
     protected void onResume() {
         super.onResume();
         initalizeGoogleMap();
@@ -202,10 +241,6 @@ public class RadarActivity extends FragmentActivity implements
     @Override
     protected void onPause() {
         super.onPause();
-        stopLocationUpdates();
-    }
-
-    private void stopLocationUpdates() {
         if (googleApiClient.isConnected()) {
             LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, this);
             googleApiClient.disconnect();
@@ -215,22 +250,18 @@ public class RadarActivity extends FragmentActivity implements
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (spenSettingView != null) {
+            spenSettingView.close();
+        }
         if (spenSurfaceView != null) {
             spenSurfaceView.close();
-            spenSurfaceView = null;
         }
         if (spenNoteDoc != null) {
             try {
                 spenNoteDoc.close();
             } catch (Exception e) {
-                e.printStackTrace();
+                Log.e(TAG, e.getMessage(), e);
             }
-            spenNoteDoc = null;
         }
-    }
-
-    @Override
-    public void onLocationChanged(Location location) {
-
     }
 }
