@@ -7,8 +7,6 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.location.Location;
 import android.os.Bundle;
-import android.support.v4.app.FragmentActivity;
-import android.support.v7.app.ActionBarActivity;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
@@ -40,6 +38,7 @@ import com.samsung.android.sdk.pen.settingui.SpenSettingPenLayout;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import at.jku.cis.radar.R;
 
@@ -49,7 +48,6 @@ public class RadarActivity extends AppCompatActivity implements
         LocationListener {
     public static final String TAG = RadarActivity.class.getSimpleName();
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
-    private ArrayList<PolylineOptions> lines = new ArrayList<>();
     private SpenPageDoc spenPageDoc;
 
     private View mapView;
@@ -177,22 +175,22 @@ public class RadarActivity extends AppCompatActivity implements
 
     private void initializeTouchListener() {
         spenSurfaceView.setTouchListener(new SpenTouchListener() {
-
-            private PolylineOptions currentLine = null;
+            private List<PolylineOptions> polyLines = new ArrayList<>();
+            private PolylineOptions line = null;
 
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                    currentLine = new PolylineOptions();
+                    line = new PolylineOptions();
                 }
 
                 Point currentPosition = new Point((int) motionEvent.getX(), (int) motionEvent.getY());
                 LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
-                currentLine.add(currentLatLng);
+                line.add(currentLatLng);
 
                 if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
-                    googleMap.addPolyline(currentLine);
-                    lines.add(currentLine);
+                    googleMap.addPolyline(line);
+                    polyLines.add(line);
                     spenPageDoc.removeAllObject();
                     spenSurfaceView.update();
                 }
