@@ -1,4 +1,4 @@
 <resources>
-    <string name="app_name">Preparedness Radar</string>
-    <string name="title_activity_map_pane">Preparedness Radar</string>
+    <string name="app_name">Radar</string>
+    <string name="title_activity_radar">Preparedness Radar</string>
 </resources>
