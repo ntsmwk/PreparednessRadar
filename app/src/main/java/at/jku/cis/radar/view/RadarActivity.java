@@ -7,13 +7,14 @@ import android.graphics.Point;
 import android.graphics.Rect;
 import android.location.Location;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 
@@ -48,14 +49,14 @@ public class RadarActivity extends AppCompatActivity implements
         LocationListener {
     public static final String TAG = RadarActivity.class.getSimpleName();
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
-    private SpenPageDoc spenPageDoc;
 
     private View mapView;
     private GoogleMap googleMap;
-    private GoogleApiClient googleApiClient;
 
+    private GoogleApiClient googleApiClient;
     private Spen spen = new Spen();
     private SpenNoteDoc spenNoteDoc;
+    private SpenPageDoc spenPageDoc;
     private SpenSurfaceView spenSurfaceView;
     private SpenSettingPenLayout spenSettingView;
 
@@ -80,11 +81,32 @@ public class RadarActivity extends AppCompatActivity implements
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main_menu, menu);
+        menu.getItem(1).setOnMenuItemClickListener(getMenuItemClickListener()
+        );
         return true;
+    }
+
+    @NonNull
+    private MenuItem.OnMenuItemClickListener getMenuItemClickListener() {
+        return new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                if (spenSettingView.isShown()) {
+                    Log.i(TAG, "View.GONE");
+                    spenSettingView.setVisibility(View.GONE); // If PenSettingView is not displayed, display it.
+                } else {
+                    Log.i(TAG, "View.VISIBLE");
+                    spenSettingView.setVisibility(View.VISIBLE);
+                    spenSettingView.setViewMode(SpenSettingPenLayout.VIEW_MODE_COLOR);
+                }
+                return false;
+            }
+        };
     }
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
+        Log.i(TAG, "" + event.getAction());
         if (MotionEvent.TOOL_TYPE_FINGER == event.getToolType(0)) {
             return mapView.dispatchTouchEvent(event);
         } else {
@@ -107,13 +129,12 @@ public class RadarActivity extends AppCompatActivity implements
         SurfaceHolder surfaceHolder = spenSurfaceView.getHolder();
         surfaceHolder.setFormat(PixelFormat.TRANSPARENT);
 
-        RelativeLayout spenViewLayout = new RelativeLayout(this);
-        spenViewLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
-        spenSettingView = new SpenSettingPenLayout(this, new String(), spenViewLayout);
+        //spenViewLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        spenSettingView = new SpenSettingPenLayout(this, new String(), new RelativeLayout(this));
         spenSettingView.setCanvasView(spenSurfaceView);
         FrameLayout frameLayout = ((FrameLayout) getSupportMapFragment().getView());
-        frameLayout.addView(spenViewLayout);
         frameLayout.addView(spenSurfaceView);
+        frameLayout.addView(spenSettingView.getRootView());
     }
 
     private void initializeSpenNoteDoc() throws IOException {
