@@ -296,6 +296,9 @@ public class RadarActivity extends AppCompatActivity implements
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (spenEraserSettingView != null) {
+            spenEraserSettingView.close();
+        }
         if (spenSettingView != null) {
             spenSettingView.close();
         }
@@ -310,6 +313,4 @@ public class RadarActivity extends AppCompatActivity implements
             }
         }
     }
-
-
 }
