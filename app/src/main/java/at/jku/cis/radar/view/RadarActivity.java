@@ -13,7 +13,6 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
-import android.view.SurfaceHolder;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
@@ -54,12 +53,14 @@ public class RadarActivity extends AppCompatActivity implements
     private View mapView;
     private GoogleMap googleMap;
     private List<PolylineOptions> polyLines = new ArrayList<>();
+
     private GoogleApiClient googleApiClient;
     private Spen spen = new Spen();
     private SpenNoteDoc spenNoteDoc;
     private SpenPageDoc spenPageDoc;
     private SpenSurfaceView spenSurfaceView;
     private SpenSettingPenLayout spenSettingView;
+
     private ImageView mEraserBtn;
     private int mToolType = SpenSurfaceView.TOOL_SPEN;
 
@@ -70,9 +71,9 @@ public class RadarActivity extends AppCompatActivity implements
         intializeMapView();
         initalizeGoogleMap();
         try {
-            initalizeSpenSurfaceView();
+            initializeSpenSurfaceView();
             initializeSpenNoteDoc();
-            initalizeColorPicker();
+            initializeColorPicker();
             initializeTouchListener();
         } catch (Exception e) {
             Log.e(TAG, e.getMessage(), e);
@@ -122,9 +123,8 @@ public class RadarActivity extends AppCompatActivity implements
     }
 
     @Override
-    public boolean dispatchTouchEvent(MotionEvent event) {
-        event.getSource();
-        if (MotionEvent.TOOL_TYPE_FINGER == event.getToolType(0)) {
+    public boolean dispatchTouchEvent(@NonNull MotionEvent event) {
+        if (MotionEvent.TOOL_TYPE_FINGER == event.getToolType(0) && MotionEvent.ACTION_MOVE == event.getAction()) {
             return mapView.dispatchTouchEvent(event);
         } else {
             return super.dispatchTouchEvent(event);
@@ -139,14 +139,14 @@ public class RadarActivity extends AppCompatActivity implements
         mapView = ((FrameLayout) getSupportMapFragment().getView()).getChildAt(0);
     }
 
-    private void initalizeSpenSurfaceView() throws Exception {
+    private void initializeSpenSurfaceView() throws Exception {
         spen.initialize(getApplicationContext());
         spenSurfaceView = new SpenSurfaceView(this);
         spenSurfaceView.setZOrderOnTop(true);
-        SurfaceHolder surfaceHolder = spenSurfaceView.getHolder();
-        surfaceHolder.setFormat(PixelFormat.TRANSPARENT);
+        spenSurfaceView.getHolder().setFormat(PixelFormat.TRANSPARENT);
 
         spenSettingView = new SpenSettingPenLayout(this, new String(), new RelativeLayout(this));
+
         spenSettingView.setCanvasView(spenSurfaceView);
         FrameLayout frameLayout = ((FrameLayout) getSupportMapFragment().getView());
         frameLayout.addView(spenSurfaceView);
@@ -165,7 +165,7 @@ public class RadarActivity extends AppCompatActivity implements
         spenSurfaceView.update();
     }
 
-    private void initalizeColorPicker() {
+    private void initializeColorPicker() {
         spenSurfaceView.setColorPickerListener(new SpenColorPickerListener() {
             public void onChanged(int color, int x, int y) {
                 // Set the color from the Color Picker to the setting view.
@@ -216,6 +216,7 @@ public class RadarActivity extends AppCompatActivity implements
 
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
+
                 Point currentPosition = new Point((int) motionEvent.getX(), (int) motionEvent.getY());
                 LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
 
@@ -248,14 +249,15 @@ public class RadarActivity extends AppCompatActivity implements
     }
 
     private boolean lineIntersected(PolylineOptions eraserLine) {
-        lineLoop: for (PolylineOptions line : polyLines) {
+        lineLoop:
+        for (PolylineOptions line : polyLines) {
             Point prev = null;
             Point prevEraser = null;
             for (LatLng latLng : line.getPoints()) {
                 Point currentPoint = googleMap.getProjection().toScreenLocation(latLng);
-                for(LatLng eraserLatLng : eraserLine.getPoints()){
+                for (LatLng eraserLatLng : eraserLine.getPoints()) {
                     Point currentEraserPoint = googleMap.getProjection().toScreenLocation(eraserLatLng);
-                    if(prev != null && prevEraser != null){
+                    if (prev != null && prevEraser != null) {
                         //double factorY = prevEraser.x*(prev.y-currentPoint.y)-prevEraser.y*(prev.x-currentPoint.x)+prev.y*()
                     }
                     prevEraser = currentEraserPoint;
@@ -275,7 +277,7 @@ public class RadarActivity extends AppCompatActivity implements
         if (location == null) {
             LocationRequest locationRequest = LocationRequest.create()
                     .setInterval(10 * 1000)        // 10 seconds, in milliseconds
-                    .setFastestInterval(1 * 1000) // 1 second, in milliseconds
+                    .setFastestInterval(1000) // 1 second, in milliseconds
                     .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
             LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest, this);
 
