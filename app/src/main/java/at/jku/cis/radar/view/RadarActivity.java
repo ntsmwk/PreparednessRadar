@@ -14,9 +14,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
-import android.view.View.OnClickListener;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
 import android.widget.RelativeLayout;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -36,7 +36,6 @@ import com.samsung.android.sdk.pen.document.SpenPageDoc;
 import com.samsung.android.sdk.pen.engine.SpenColorPickerListener;
 import com.samsung.android.sdk.pen.engine.SpenSurfaceView;
 import com.samsung.android.sdk.pen.engine.SpenTouchListener;
-import com.samsung.android.sdk.pen.settingui.SpenSettingEraserLayout;
 import com.samsung.android.sdk.pen.settingui.SpenSettingPenLayout;
 
 import java.io.IOException;
@@ -61,9 +60,8 @@ public class RadarActivity extends AppCompatActivity implements
     private SpenPageDoc spenPageDoc;
     private SpenSurfaceView spenSurfaceView;
     private SpenSettingPenLayout spenSettingView;
-    private SpenSettingEraserLayout spenEraserSettingView;
-
-
+    private ImageView mEraserBtn;
+    private int mToolType = SpenSurfaceView.TOOL_SPEN;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -87,26 +85,25 @@ public class RadarActivity extends AppCompatActivity implements
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main_menu, menu);
         menu.getItem(1).setOnMenuItemClickListener(getColorClickListener());
-        menu.getItem(0).setOnMenuItemClickListener(getEarserClickListener());
+        menu.getItem(0).setOnMenuItemClickListener(getEraserClickListener());
         return true;
     }
 
     @NonNull
-    private MenuItem.OnMenuItemClickListener getEarserClickListener() {
+    private MenuItem.OnMenuItemClickListener getEraserClickListener() {
         return new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
-                if (spenEraserSettingView.isShown()) {
-                    spenEraserSettingView.setVisibility(View.GONE);
+                if (spenSurfaceView.getToolTypeAction(mToolType) == SpenSurfaceView.ACTION_ERASER) {
+                    spenSurfaceView.setToolTypeAction(mToolType, SpenSurfaceView.ACTION_STROKE);
                 } else {
-                    spenEraserSettingView.setVisibility(View.VISIBLE);
-                    spenEraserSettingView.setViewMode(SpenSettingEraserLayout.VIEW_MODE_NORMAL);
+                    spenSurfaceView.setToolTypeAction(mToolType, SpenSurfaceView.ACTION_ERASER);
                 }
-                return false;
+                return true;
             }
         };
     }
-    
+
     @NonNull
     private MenuItem.OnMenuItemClickListener getColorClickListener() {
         return new MenuItem.OnMenuItemClickListener() {
@@ -149,13 +146,10 @@ public class RadarActivity extends AppCompatActivity implements
         SurfaceHolder surfaceHolder = spenSurfaceView.getHolder();
         surfaceHolder.setFormat(PixelFormat.TRANSPARENT);
 
-        spenEraserSettingView = new SpenSettingEraserLayout(this, new String(), new RelativeLayout(this));
-        spenEraserSettingView.setCanvasView(spenSurfaceView);
         spenSettingView = new SpenSettingPenLayout(this, new String(), new RelativeLayout(this));
         spenSettingView.setCanvasView(spenSurfaceView);
         FrameLayout frameLayout = ((FrameLayout) getSupportMapFragment().getView());
         frameLayout.addView(spenSurfaceView);
-        frameLayout.addView(spenEraserSettingView.getRootView());
         frameLayout.addView(spenSettingView.getRootView());
     }
 
@@ -173,7 +167,6 @@ public class RadarActivity extends AppCompatActivity implements
 
     private void initalizeColorPicker() {
         spenSurfaceView.setColorPickerListener(new SpenColorPickerListener() {
-            @Override
             public void onChanged(int color, int x, int y) {
                 // Set the color from the Color Picker to the setting view.
                 if (spenSettingView != null) {
@@ -219,29 +212,62 @@ public class RadarActivity extends AppCompatActivity implements
     private void initializeTouchListener() {
         spenSurfaceView.setTouchListener(new SpenTouchListener() {
             private PolylineOptions line = null;
+            private PolylineOptions eraserLine = null;
 
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
-                if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                    line = new PolylineOptions();
-                    SpenSettingPenInfo penInfo = spenSettingView.getInfo();
-                    line.color(penInfo.color);
-                }
-
                 Point currentPosition = new Point((int) motionEvent.getX(), (int) motionEvent.getY());
                 LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
-                line.add(currentLatLng);
 
-                if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
-                    googleMap.addPolyline(line);
-                    polyLines.add(line);
-                    spenPageDoc.removeAllObject();
-                    spenSurfaceView.update();
+                if (spenSurfaceView.getToolTypeAction(mToolType) == SpenSurfaceView.ACTION_ERASER) {
+                    if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                        eraserLine = new PolylineOptions();
+                    }
+                    if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                        lineIntersected(eraserLine);
+                    }
+                } else {
+                    if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                        line = new PolylineOptions();
+                        SpenSettingPenInfo penInfo = spenSettingView.getInfo();
+                        line.color(penInfo.color);
+                    }
+
+                    line.add(currentLatLng);
+                    if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                        googleMap.addPolyline(line);
+                        polyLines.add(line);
+                        spenPageDoc.removeAllObject();
+                        spenSurfaceView.update();
+                    }
                 }
+
                 return false;
             }
         });
     }
+
+    private boolean lineIntersected(PolylineOptions eraserLine) {
+        lineLoop: for (PolylineOptions line : polyLines) {
+            Point prev = null;
+            Point prevEraser = null;
+            for (LatLng latLng : line.getPoints()) {
+                Point currentPoint = googleMap.getProjection().toScreenLocation(latLng);
+                for(LatLng eraserLatLng : eraserLine.getPoints()){
+                    Point currentEraserPoint = googleMap.getProjection().toScreenLocation(eraserLatLng);
+                    if(prev != null && prevEraser != null){
+                        //double factorY = prevEraser.x*(prev.y-currentPoint.y)-prevEraser.y*(prev.x-currentPoint.x)+prev.y*()
+                    }
+                    prevEraser = currentEraserPoint;
+
+                }
+                prev = currentPoint;
+            }
+        }
+
+        return false;
+    }
+
 
     @Override
     public void onConnected(Bundle bundle) {
@@ -300,9 +326,6 @@ public class RadarActivity extends AppCompatActivity implements
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (spenEraserSettingView != null) {
-            spenEraserSettingView.close();
-        }
         if (spenSettingView != null) {
             spenSettingView.close();
         }
