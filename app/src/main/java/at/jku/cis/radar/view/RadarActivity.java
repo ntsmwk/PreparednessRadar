@@ -68,9 +68,9 @@ public class RadarActivity extends AppCompatActivity implements
         intializeMapView();
         initalizeGoogleMap();
         try {
-            initalizeSpenSurfaceView();
+            initializeSpenSurfaceView();
             initializeSpenNoteDoc();
-            initalizeColorPicker();
+            initializeColorPicker();
             initializeTouchListener();
         } catch (Exception e) {
             Log.e(TAG, e.getMessage(), e);
@@ -137,7 +137,7 @@ public class RadarActivity extends AppCompatActivity implements
         mapView = ((FrameLayout) getSupportMapFragment().getView()).getChildAt(0);
     }
 
-    private void initalizeSpenSurfaceView() throws Exception {
+    private void initializeSpenSurfaceView() throws Exception {
         spen.initialize(getApplicationContext());
         spenSurfaceView = new SpenSurfaceView(this);
         spenSurfaceView.setZOrderOnTop(true);
@@ -165,7 +165,7 @@ public class RadarActivity extends AppCompatActivity implements
         spenSurfaceView.update();
     }
 
-    private void initalizeColorPicker() {
+    private void initializeColorPicker() {
         spenSurfaceView.setColorPickerListener(new SpenColorPickerListener() {
             @Override
             public void onChanged(int color, int x, int y) {
