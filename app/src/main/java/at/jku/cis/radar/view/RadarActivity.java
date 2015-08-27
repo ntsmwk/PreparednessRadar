@@ -36,6 +36,7 @@ import com.samsung.android.sdk.pen.document.SpenPageDoc;
 import com.samsung.android.sdk.pen.engine.SpenColorPickerListener;
 import com.samsung.android.sdk.pen.engine.SpenSurfaceView;
 import com.samsung.android.sdk.pen.engine.SpenTouchListener;
+import com.samsung.android.sdk.pen.settingui.SpenSettingEraserLayout;
 import com.samsung.android.sdk.pen.settingui.SpenSettingPenLayout;
 
 import java.io.IOException;
@@ -60,6 +61,7 @@ public class RadarActivity extends AppCompatActivity implements
     private SpenPageDoc spenPageDoc;
     private SpenSurfaceView spenSurfaceView;
     private SpenSettingPenLayout spenSettingView;
+    private SpenSettingEraserLayout spenEraserSettingView;
 
 
 
@@ -84,23 +86,38 @@ public class RadarActivity extends AppCompatActivity implements
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main_menu, menu);
-        menu.getItem(1).setOnMenuItemClickListener(getMenuItemClickListener()
-        );
+        menu.getItem(1).setOnMenuItemClickListener(getColorClickListener());
+        menu.getItem(0).setOnMenuItemClickListener(getEarserClickListener());
         return true;
     }
 
     @NonNull
-    private MenuItem.OnMenuItemClickListener getMenuItemClickListener() {
+    private MenuItem.OnMenuItemClickListener getEarserClickListener() {
+        return new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                if (spenEraserSettingView.isShown()) {
+                    spenEraserSettingView.setVisibility(View.GONE);
+                } else {
+                    spenEraserSettingView.setVisibility(View.VISIBLE);
+                    spenEraserSettingView.setViewMode(SpenSettingEraserLayout.VIEW_MODE_NORMAL);
+                }
+                return false;
+            }
+        };
+    }
+    
+    @NonNull
+    private MenuItem.OnMenuItemClickListener getColorClickListener() {
         return new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
                 if (spenSettingView.isShown()) {
-                    Log.i(TAG, "View.GONE");
-                    spenSettingView.setVisibility(View.GONE); // If PenSettingView is not displayed, display it.
+                    spenSettingView.setVisibility(View.GONE);
                 } else {
-                    Log.i(TAG, "View.VISIBLE");
                     spenSettingView.setVisibility(View.VISIBLE);
                     spenSettingView.setViewMode(SpenSettingPenLayout.VIEW_MODE_COLOR);
+                    spenSettingView.setExtendedPresetEnable(true);
                 }
                 return false;
             }
@@ -109,7 +126,7 @@ public class RadarActivity extends AppCompatActivity implements
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent event) {
-        Log.i(TAG, "" + event.getAction());
+        event.getSource();
         if (MotionEvent.TOOL_TYPE_FINGER == event.getToolType(0)) {
             return mapView.dispatchTouchEvent(event);
         } else {
@@ -132,11 +149,13 @@ public class RadarActivity extends AppCompatActivity implements
         SurfaceHolder surfaceHolder = spenSurfaceView.getHolder();
         surfaceHolder.setFormat(PixelFormat.TRANSPARENT);
 
-        //spenViewLayout.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+        spenEraserSettingView = new SpenSettingEraserLayout(this, new String(), new RelativeLayout(this));
+        spenEraserSettingView.setCanvasView(spenSurfaceView);
         spenSettingView = new SpenSettingPenLayout(this, new String(), new RelativeLayout(this));
         spenSettingView.setCanvasView(spenSurfaceView);
         FrameLayout frameLayout = ((FrameLayout) getSupportMapFragment().getView());
         frameLayout.addView(spenSurfaceView);
+        frameLayout.addView(spenEraserSettingView.getRootView());
         frameLayout.addView(spenSettingView.getRootView());
     }
 
@@ -281,6 +300,9 @@ public class RadarActivity extends AppCompatActivity implements
     @Override
     protected void onDestroy() {
         super.onDestroy();
+        if (spenEraserSettingView != null) {
+            spenEraserSettingView.close();
+        }
         if (spenSettingView != null) {
             spenSettingView.close();
         }
