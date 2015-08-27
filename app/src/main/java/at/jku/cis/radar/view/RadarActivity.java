@@ -14,6 +14,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
+import android.view.View.OnClickListener;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
@@ -52,13 +53,15 @@ public class RadarActivity extends AppCompatActivity implements
 
     private View mapView;
     private GoogleMap googleMap;
-
+    private List<PolylineOptions> polyLines = new ArrayList<>();
     private GoogleApiClient googleApiClient;
     private Spen spen = new Spen();
     private SpenNoteDoc spenNoteDoc;
     private SpenPageDoc spenPageDoc;
     private SpenSurfaceView spenSurfaceView;
     private SpenSettingPenLayout spenSettingView;
+
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -196,13 +199,14 @@ public class RadarActivity extends AppCompatActivity implements
 
     private void initializeTouchListener() {
         spenSurfaceView.setTouchListener(new SpenTouchListener() {
-            private List<PolylineOptions> polyLines = new ArrayList<>();
             private PolylineOptions line = null;
 
             @Override
             public boolean onTouch(View view, MotionEvent motionEvent) {
                 if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                     line = new PolylineOptions();
+                    SpenSettingPenInfo penInfo = spenSettingView.getInfo();
+                    line.color(penInfo.color);
                 }
 
                 Point currentPosition = new Point((int) motionEvent.getX(), (int) motionEvent.getY());
