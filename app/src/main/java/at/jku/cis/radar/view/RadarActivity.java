@@ -121,9 +121,8 @@ public class RadarActivity extends AppCompatActivity implements
     }
 
     @Override
-    public boolean dispatchTouchEvent(MotionEvent event) {
-        event.getSource();
-        if (MotionEvent.TOOL_TYPE_FINGER == event.getToolType(0)) {
+    public boolean dispatchTouchEvent(@NonNull MotionEvent event) {
+        if (MotionEvent.TOOL_TYPE_FINGER == event.getToolType(0) && MotionEvent.ACTION_MOVE == event.getAction()) {
             return mapView.dispatchTouchEvent(event);
         } else {
             return super.dispatchTouchEvent(event);
@@ -142,12 +141,11 @@ public class RadarActivity extends AppCompatActivity implements
         spen.initialize(getApplicationContext());
         spenSurfaceView = new SpenSurfaceView(this);
         spenSurfaceView.setZOrderOnTop(true);
-        SurfaceHolder surfaceHolder = spenSurfaceView.getHolder();
-        surfaceHolder.setFormat(PixelFormat.TRANSPARENT);
+        spenSurfaceView.getHolder().setFormat(PixelFormat.TRANSPARENT);
 
-        spenEraserSettingView = new SpenSettingEraserLayout(this, new String(), new RelativeLayout(this));
+        spenEraserSettingView = new SpenSettingEraserLayout(this, "", new RelativeLayout(this));
         spenEraserSettingView.setCanvasView(spenSurfaceView);
-        spenSettingView = new SpenSettingPenLayout(this, new String(), new RelativeLayout(this));
+        spenSettingView = new SpenSettingPenLayout(this, "", new RelativeLayout(this));
         spenSettingView.setCanvasView(spenSurfaceView);
         FrameLayout frameLayout = ((FrameLayout) getSupportMapFragment().getView());
         frameLayout.addView(spenSurfaceView);
@@ -244,7 +242,7 @@ public class RadarActivity extends AppCompatActivity implements
         if (location == null) {
             LocationRequest locationRequest = LocationRequest.create()
                     .setInterval(10 * 1000)        // 10 seconds, in milliseconds
-                    .setFastestInterval(1 * 1000) // 1 second, in milliseconds
+                    .setFastestInterval(1000) // 1 second, in milliseconds
                     .setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY);
             LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest, this);
 
