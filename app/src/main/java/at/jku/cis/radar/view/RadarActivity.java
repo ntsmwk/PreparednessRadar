@@ -1,22 +1,16 @@
 package at.jku.cis.radar.view;
 
 import android.content.IntentSender;
-import android.graphics.Color;
-import android.graphics.PixelFormat;
 import android.graphics.Point;
-import android.graphics.Rect;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.v7.app.AppCompatActivity;
+import android.support.v4.app.FragmentActivity;
 import android.util.Log;
-import android.view.Menu;
-import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -28,22 +22,13 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.PolylineOptions;
-import com.samsung.android.sdk.pen.Spen;
-import com.samsung.android.sdk.pen.SpenSettingPenInfo;
-import com.samsung.android.sdk.pen.document.SpenNoteDoc;
-import com.samsung.android.sdk.pen.document.SpenPageDoc;
-import com.samsung.android.sdk.pen.engine.SpenColorPickerListener;
-import com.samsung.android.sdk.pen.engine.SpenSurfaceView;
-import com.samsung.android.sdk.pen.engine.SpenTouchListener;
-import com.samsung.android.sdk.pen.settingui.SpenSettingPenLayout;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import at.jku.cis.radar.R;
 
-public class RadarActivity extends AppCompatActivity implements
+public class RadarActivity extends FragmentActivity implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
         LocationListener {
@@ -53,82 +38,51 @@ public class RadarActivity extends AppCompatActivity implements
     private View mapView;
     private GoogleMap googleMap;
     private List<PolylineOptions> polyLines = new ArrayList<>();
+    private PolylineOptions line = null;
+    private PolylineOptions eraserLine = null;
 
     private GoogleApiClient googleApiClient;
-    private Spen spen = new Spen();
-    private SpenNoteDoc spenNoteDoc;
-    private SpenPageDoc spenPageDoc;
-    private SpenSurfaceView spenSurfaceView;
-    private SpenSettingPenLayout spenSettingView;
 
     private ImageView mEraserBtn;
-    private int mToolType = SpenSurfaceView.TOOL_SPEN;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_radar);
         intializeMapView();
-        initalizeGoogleMap();
-        try {
-            initializeSpenSurfaceView();
-            initializeSpenNoteDoc();
-            initializeColorPicker();
-            initializeTouchListener();
-        } catch (Exception e) {
-            Log.e(TAG, e.getMessage(), e);
-            throw new RuntimeException(e);
+        initializeGoogleMap();
+        initializeGoogleApiClient();
+    }
+
+    public int getStatusBarHeight() {
+        int result = 0;
+        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
+        if (resourceId > 0) {
+            result = getResources().getDimensionPixelSize(resourceId);
         }
-        initalizeGoogleApiClient();
+        return result;
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main_menu, menu);
-        menu.getItem(1).setOnMenuItemClickListener(getColorClickListener());
-        menu.getItem(0).setOnMenuItemClickListener(getEraserClickListener());
-        return true;
-    }
+    public boolean dispatchTouchEvent(@NonNull MotionEvent motionEvent) {
 
-    @NonNull
-    private MenuItem.OnMenuItemClickListener getEraserClickListener() {
-        return new MenuItem.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                if (spenSurfaceView.getToolTypeAction(mToolType) == SpenSurfaceView.ACTION_ERASER) {
-                    spenSurfaceView.setToolTypeAction(mToolType, SpenSurfaceView.ACTION_STROKE);
-                } else {
-                    spenSurfaceView.setToolTypeAction(mToolType, SpenSurfaceView.ACTION_ERASER);
-                }
-                return true;
+        Point currentPosition = new Point((int) motionEvent.getRawX(), (int) motionEvent.getRawY() - getStatusBarHeight());
+        LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
+
+        if (motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) {
+            if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                line = new PolylineOptions();
             }
-        };
-    }
 
-    @NonNull
-    private MenuItem.OnMenuItemClickListener getColorClickListener() {
-        return new MenuItem.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                if (spenSettingView.isShown()) {
-                    spenSettingView.setVisibility(View.GONE);
-                } else {
-                    spenSettingView.setVisibility(View.VISIBLE);
-                    spenSettingView.setViewMode(SpenSettingPenLayout.VIEW_MODE_COLOR);
-                    spenSettingView.setExtendedPresetEnable(true);
-                }
-                return false;
+            line.add(currentLatLng);
+            if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                googleMap.addPolyline(line);
+                polyLines.add(line);
             }
-        };
-    }
-
-    @Override
-    public boolean dispatchTouchEvent(@NonNull MotionEvent event) {
-        if (MotionEvent.TOOL_TYPE_FINGER == event.getToolType(0) && MotionEvent.ACTION_MOVE == event.getAction()) {
-            return mapView.dispatchTouchEvent(event);
         } else {
-            return super.dispatchTouchEvent(event);
+            mapView.dispatchTouchEvent(motionEvent);
         }
+        return true;
     }
 
     private SupportMapFragment getSupportMapFragment() {
@@ -139,53 +93,14 @@ public class RadarActivity extends AppCompatActivity implements
         mapView = ((FrameLayout) getSupportMapFragment().getView()).getChildAt(0);
     }
 
-    private void initializeSpenSurfaceView() throws Exception {
-        spen.initialize(getApplicationContext());
-        spenSurfaceView = new SpenSurfaceView(this);
-        spenSurfaceView.setZOrderOnTop(true);
-        spenSurfaceView.getHolder().setFormat(PixelFormat.TRANSPARENT);
-
-        spenSettingView = new SpenSettingPenLayout(this, new String(), new RelativeLayout(this));
-
-        spenSettingView.setCanvasView(spenSurfaceView);
-        FrameLayout frameLayout = ((FrameLayout) getSupportMapFragment().getView());
-        frameLayout.addView(spenSurfaceView);
-        frameLayout.addView(spenSettingView.getRootView());
-    }
-
-    private void initializeSpenNoteDoc() throws IOException {
-        Rect rect = new Rect();
-        getWindowManager().getDefaultDisplay().getRectSize(rect);
-        spenNoteDoc = new SpenNoteDoc(this, rect.width(), rect.height());
-        spenPageDoc = spenNoteDoc.appendPage();
-
-        spenPageDoc.clearHistory();
-        spenPageDoc.setBackgroundColor(Color.TRANSPARENT);
-        spenSurfaceView.setPageDoc(spenPageDoc, true);
-        spenSurfaceView.update();
-    }
-
-    private void initializeColorPicker() {
-        spenSurfaceView.setColorPickerListener(new SpenColorPickerListener() {
-            public void onChanged(int color, int x, int y) {
-                // Set the color from the Color Picker to the setting view.
-                if (spenSettingView != null) {
-                    SpenSettingPenInfo penInfo = spenSettingView.getInfo();
-                    penInfo.color = color;
-                    spenSettingView.setInfo(penInfo);
-                }
-            }
-        });
-    }
-
-    private void initalizeGoogleMap() {
+    private void initializeGoogleMap() {
         googleMap = getSupportMapFragment().getMap();
         googleMap.setMyLocationEnabled(true);
         googleMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
         googleMap.getUiSettings().setMyLocationButtonEnabled(true);
     }
 
-    private void initalizeGoogleApiClient() {
+    private void initializeGoogleApiClient() {
         if (googleApiClient == null) {
             googleApiClient = buildGoogleApiClient();
         }
@@ -207,45 +122,6 @@ public class RadarActivity extends AppCompatActivity implements
         double currentLongitude = location.getLongitude();
         LatLng latLng = new LatLng(currentLatitude, currentLongitude);
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
-    }
-
-    private void initializeTouchListener() {
-        spenSurfaceView.setTouchListener(new SpenTouchListener() {
-            private PolylineOptions line = null;
-            private PolylineOptions eraserLine = null;
-
-            @Override
-            public boolean onTouch(View view, MotionEvent motionEvent) {
-
-                Point currentPosition = new Point((int) motionEvent.getX(), (int) motionEvent.getY());
-                LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
-
-                if (spenSurfaceView.getToolTypeAction(mToolType) == SpenSurfaceView.ACTION_ERASER) {
-                    if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                        eraserLine = new PolylineOptions();
-                    }
-                    if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
-                        lineIntersected(eraserLine);
-                    }
-                } else {
-                    if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                        line = new PolylineOptions();
-                        SpenSettingPenInfo penInfo = spenSettingView.getInfo();
-                        line.color(penInfo.color);
-                    }
-
-                    line.add(currentLatLng);
-                    if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
-                        googleMap.addPolyline(line);
-                        polyLines.add(line);
-                        spenPageDoc.removeAllObject();
-                        spenSurfaceView.update();
-                    }
-                }
-
-                return false;
-            }
-        });
     }
 
     private boolean lineIntersected(PolylineOptions eraserLine) {
@@ -312,8 +188,8 @@ public class RadarActivity extends AppCompatActivity implements
     @Override
     protected void onResume() {
         super.onResume();
-        initalizeGoogleMap();
-        initalizeGoogleApiClient();
+        initializeGoogleMap();
+        initializeGoogleApiClient();
     }
 
     @Override
@@ -328,18 +204,5 @@ public class RadarActivity extends AppCompatActivity implements
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        if (spenSettingView != null) {
-            spenSettingView.close();
-        }
-        if (spenSurfaceView != null) {
-            spenSurfaceView.close();
-        }
-        if (spenNoteDoc != null) {
-            try {
-                spenNoteDoc.close();
-            } catch (Exception e) {
-                Log.e(TAG, e.getMessage(), e);
-            }
-        }
     }
 }
