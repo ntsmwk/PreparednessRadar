@@ -7,6 +7,7 @@ import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
 import android.util.Log;
+import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -42,6 +43,7 @@ public class RadarActivity extends FragmentActivity implements
         LocationListener {
     public static final String TAG = RadarActivity.class.getSimpleName();
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
+    private final static double SIDEBAR_WIDTH_PERCENTAGE = 0.25;
 
     private View mapView;
     private GoogleMap googleMap;
@@ -82,10 +84,17 @@ public class RadarActivity extends FragmentActivity implements
         return result;
     }
 
+    public int getSideBarWidth(){
+        Display display = getWindowManager().getDefaultDisplay();
+        Point size = new Point();
+        display.getSize(size);
+        return (int)(size.x*SIDEBAR_WIDTH_PERCENTAGE);
+    }
+
     @Override
     public boolean dispatchTouchEvent(@NonNull MotionEvent motionEvent) {
 
-        Point currentPosition = new Point((int) motionEvent.getRawX(), (int) motionEvent.getRawY() - getStatusBarHeight());
+        Point currentPosition = new Point((int) motionEvent.getRawX()-getSideBarWidth(), (int) motionEvent.getRawY() - getStatusBarHeight());
         LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
 
         if (motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) {
