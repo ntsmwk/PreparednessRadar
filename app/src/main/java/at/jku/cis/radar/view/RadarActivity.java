@@ -23,10 +23,18 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.PolylineOptions;
 
+import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.xml.parsers.ParserConfigurationException;
+
 import at.jku.cis.radar.R;
+import at.jku.cis.radar.model.EventDOMParser;
+import at.jku.cis.radar.model.XMLEvent;
 
 public class RadarActivity extends FragmentActivity implements
         GoogleApiClient.ConnectionCallbacks,
@@ -42,6 +50,7 @@ public class RadarActivity extends FragmentActivity implements
     private PolylineOptions eraserLine = null;
 
     private GoogleApiClient googleApiClient;
+    private List<XMLEvent> eventList;
 
     private ImageView mEraserBtn;
 
@@ -49,9 +58,19 @@ public class RadarActivity extends FragmentActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_radar);
+        try {
+            initializeEvents();
+        }catch (IOException|ParserConfigurationException|SAXException e){
+            Log.e(TAG, "Exception: " + e.getMessage());
+        }
         intializeMapView();
         initializeGoogleMap();
         initializeGoogleApiClient();
+    }
+
+    private void initializeEvents() throws IOException, ParserConfigurationException, SAXException{
+        InputStream in_s = getApplicationContext().getAssets().open("eventTree.xml");
+        eventList = EventDOMParser.processXML(in_s);
     }
 
     public int getStatusBarHeight() {

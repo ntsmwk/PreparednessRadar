@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+
+<events>
+	<event name = "Fire">
+		<events>
+			<event name = "Structure Fire">			
+				<actions>
+					<action name = "cleared"/>
+				</actions>	
+			</event>
+			<event name = "Vehicle Fire">
+				<actions>
+					<action name = "cleared"/>
+				</actions>	
+			</event>
+			<event name = "Wildfire">
+				<actions>
+					<action name = "cleared"/>
+				</actions>	
+			</event>
+			<event name = "Oil Refinery Fire">
+				<actions>
+					<action name = "cleared"/>
+				</actions>	
+			</event>
+			<event name = "Tank Farm Fire">
+				<actions>
+					<action name = "cleared"/>
+				</actions>	
+			</event>
+			<event name = "Ship Fire">
+				<actions>
+					<action name = "cleared"/>
+				</actions>	
+			</event>
+			<event name = "Mine Fire">
+				<actions>
+					<action name = "cleared"/>
+				</actions>	
+			</event>
+		</events>
+		<actions>
+			<action name = "cleared"/>
+		</actions>
+	</event>
+	<event name = "Flooding">
+		<events>
+			<event name = "Street Flooding">
+				<actions>
+					<action name = "cleared"/>
+				</actions>
+			</event>
+		</events>
+		<actions>
+			<action name = "cleared"/>
+		</actions>
+	</event>
+	<event name = "Car Accident">
+		<events>
+			<event name = "Small Crash">
+				<actions>
+					<action name = "cleared"/>
+				</actions>
+			</event>
+		</events>
+		<actions>
+			<action name = "cleared"/>
+		</actions>
+	</event>
+</events>
