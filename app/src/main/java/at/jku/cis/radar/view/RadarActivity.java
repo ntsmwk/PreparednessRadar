@@ -1,5 +1,6 @@
 package at.jku.cis.radar.view;
 
+import android.app.usage.UsageEvents;
 import android.content.IntentSender;
 import android.graphics.Point;
 import android.location.Location;
@@ -23,6 +24,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.unnamed.b.atv.model.TreeNode;
 
 import org.xml.sax.SAXException;
 
@@ -35,6 +37,8 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import at.jku.cis.radar.R;
 import at.jku.cis.radar.model.EventDOMParser;
+import at.jku.cis.radar.model.EventTreeBuilder;
+import at.jku.cis.radar.model.EventTreeNode;
 import at.jku.cis.radar.model.XMLEvent;
 
 public class RadarActivity extends FragmentActivity implements
@@ -52,7 +56,7 @@ public class RadarActivity extends FragmentActivity implements
     private PolylineOptions eraserLine = null;
 
     private GoogleApiClient googleApiClient;
-    private List<XMLEvent> eventList;
+    private EventTreeNode rootEventNode;
 
     private ImageView mEraserBtn;
 
@@ -60,19 +64,21 @@ public class RadarActivity extends FragmentActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_radar);
+        List<XMLEvent> eventList = null;
         try {
-            initializeEvents();
-        }catch (IOException|ParserConfigurationException|SAXException e){
+            eventList = initializeEvents();
+        } catch (IOException | ParserConfigurationException | SAXException e) {
             Log.e(TAG, "Exception: " + e.getMessage());
         }
+        rootEventNode = EventTreeBuilder.initializeEventTree(eventList);
         intializeMapView();
         initializeGoogleMap();
         initializeGoogleApiClient();
     }
 
-    private void initializeEvents() throws IOException, ParserConfigurationException, SAXException{
+    private List<XMLEvent> initializeEvents() throws IOException, ParserConfigurationException, SAXException {
         InputStream in_s = getApplicationContext().getAssets().open("eventTree.xml");
-        eventList = EventDOMParser.processXML(in_s);
+        return EventDOMParser.processXML(in_s);
     }
 
     public int getStatusBarHeight() {
@@ -84,17 +90,17 @@ public class RadarActivity extends FragmentActivity implements
         return result;
     }
 
-    public int getSideBarWidth(){
+    public int getSideBarWidth() {
         Display display = getWindowManager().getDefaultDisplay();
         Point size = new Point();
         display.getSize(size);
-        return (int)(size.x*SIDEBAR_WIDTH_PERCENTAGE);
+        return (int) (size.x * SIDEBAR_WIDTH_PERCENTAGE);
     }
 
     @Override
     public boolean dispatchTouchEvent(@NonNull MotionEvent motionEvent) {
 
-        Point currentPosition = new Point((int) motionEvent.getRawX()-getSideBarWidth(), (int) motionEvent.getRawY() - getStatusBarHeight());
+        Point currentPosition = new Point((int) motionEvent.getRawX() - getSideBarWidth(), (int) motionEvent.getRawY() - getStatusBarHeight());
         LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
 
         if (motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) {
