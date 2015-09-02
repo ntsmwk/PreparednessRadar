@@ -14,11 +14,10 @@ public class GoogleMapFragment extends SupportMapFragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        GoogleView googleView = new GoogleView(inflater.getContext());
-        //return super.onCreateView(inflater, container, savedInstanceState);
-
-        getMapAsync(googleView);
-        return googleView;
+        //GoogleView googleView = new GoogleView(inflater.getContext());
+        return super.onCreateView(inflater, container, savedInstanceState);
+        //getMapAsync(googleView);
+        //return googleView;
     }
 
     @Override
