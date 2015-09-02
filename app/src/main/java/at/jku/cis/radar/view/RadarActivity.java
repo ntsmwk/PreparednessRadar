@@ -6,13 +6,11 @@ import android.graphics.Point;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
-import android.support.v4.app.FragmentActivity;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.Toast;
@@ -27,7 +25,6 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.PolylineOptions;
-import com.unnamed.b.atv.view.AndroidTreeView;
 
 import org.xml.sax.SAXException;
 
@@ -54,7 +51,7 @@ public class RadarActivity extends AppCompatActivity implements
     private SelectableTreeFragment sidebarFragment;
     private View sidebarView;
 
-    private View mapView;
+    private GoogleMapView mapView;
     private GoogleMap googleMap;
     private List<PolylineOptions> polyLines = new ArrayList<>();
     private PolylineOptions line = null;
@@ -62,7 +59,6 @@ public class RadarActivity extends AppCompatActivity implements
 
     private GoogleApiClient googleApiClient;
     private EventTreeNode rootEventNode;
-    private static final int SIDEBAR_VIEW_ID = 10101010;
 
     private ImageView mEraserBtn;
 
@@ -79,7 +75,7 @@ public class RadarActivity extends AppCompatActivity implements
             System.exit(1);
         }
         rootEventNode = EventTreeBuilder.initializeEventTree(eventList);
-        intializeMapView();
+        initializeMapView();
         initializeGoogleMap();
         initializeGoogleApiClient();
         initializeSideBar();
@@ -90,7 +86,7 @@ public class RadarActivity extends AppCompatActivity implements
         return EventDOMParser.processXML(in_s);
     }
 
-    private void initializeSideBar(){
+    private void initializeSideBar() {
         sidebarView = findViewById(R.id.SidebarLayout);
         sidebarFragment = new SelectableTreeFragment();
         FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
@@ -115,30 +111,39 @@ public class RadarActivity extends AppCompatActivity implements
 
     @Override
     public boolean dispatchTouchEvent(@NonNull MotionEvent motionEvent) {
-        Point currentPosition = new Point((int) motionEvent.getRawX() - getSideBarWidth(), (int) motionEvent.getRawY() - getStatusBarHeight());
-        LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
-        if (motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) {
-            if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                line = new PolylineOptions();
-            }
+        mapView.dispatchTouchEvent(motionEvent);
 
-            line.add(currentLatLng);
-            if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
-                googleMap.addPolyline(line);
-                polyLines.add(line);
-            }
-        } else {
-            mapView.dispatchTouchEvent(motionEvent);
-        }
         return true;
     }
+
 
     private SupportMapFragment getSupportMapFragment() {
         return (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
     }
 
-    private void intializeMapView() {
-        mapView = ((FrameLayout) getSupportMapFragment().getView()).getChildAt(0);
+    private void initializeMapView() {
+        //mapView = ((FrameLayout) getSupportMapFragment().getView()).getChildAt(0);
+        mapView = (GoogleMapView) findViewById(R.id.FragmentLayout);
+        mapView.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent motionEvent) {
+                Point currentPosition = new Point((int) motionEvent.getRawX() - getSideBarWidth(), (int) motionEvent.getRawY() - getStatusBarHeight());
+                LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
+                if (motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) {
+                    if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                        line = new PolylineOptions();
+                    }
+                    line.add(currentLatLng);
+                    if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                        googleMap.addPolyline(line);
+                        polyLines.add(line);
+                    }
+                } else {
+                    mapView.dispatchTouchEvent(motionEvent);
+                }
+                return true;
+            }
+        });
     }
 
     private void initializeGoogleMap() {
