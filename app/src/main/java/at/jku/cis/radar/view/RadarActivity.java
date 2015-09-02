@@ -3,17 +3,17 @@ package at.jku.cis.radar.view;
 import android.app.FragmentTransaction;
 import android.content.IntentSender;
 import android.graphics.Point;
+import android.graphics.Rect;
 import android.location.Location;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
+import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Display;
+import android.view.DragEvent;
 import android.view.MotionEvent;
+import android.view.TouchDelegate;
 import android.view.View;
-import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -26,20 +26,12 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.PolylineOptions;
 
-import org.xml.sax.SAXException;
-
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.xml.parsers.ParserConfigurationException;
-
 import at.jku.cis.radar.R;
-import at.jku.cis.radar.model.EventDOMParser;
-import at.jku.cis.radar.model.EventTreeBuilder;
+import at.jku.cis.radar.fragment.GoogleMapFragment;
 import at.jku.cis.radar.model.EventTreeNode;
-import at.jku.cis.radar.model.XMLEvent;
 
 public class RadarActivity extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks,
@@ -50,40 +42,20 @@ public class RadarActivity extends AppCompatActivity implements
     private final static double SIDEBAR_WIDTH_PERCENTAGE = 0.25;
     private SelectableTreeFragment sidebarFragment;
     private View sidebarView;
-
-    private GoogleMapView mapView;
+    private GoogleMapFragment mapFragment;
+    private View googleView;
     private GoogleMap googleMap;
-    private List<PolylineOptions> polyLines = new ArrayList<>();
-    private PolylineOptions line = null;
     private PolylineOptions eraserLine = null;
-
     private GoogleApiClient googleApiClient;
     private EventTreeNode rootEventNode;
-
-    private ImageView mEraserBtn;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_radar);
-        List<XMLEvent> eventList = null;
-        try {
-            eventList = initializeEvents();
-        } catch (IOException | ParserConfigurationException | SAXException e) {
-            Log.e(TAG, "Exception: " + e.getMessage());
-            Toast.makeText(this, "Error when initializing Events!", Toast.LENGTH_SHORT).show();
-            System.exit(1);
-        }
-        rootEventNode = EventTreeBuilder.initializeEventTree(eventList);
-        initializeMapView();
-        initializeGoogleMap();
-        initializeGoogleApiClient();
         initializeSideBar();
-    }
-
-    private List<XMLEvent> initializeEvents() throws IOException, ParserConfigurationException, SAXException {
-        InputStream in_s = getApplicationContext().getAssets().open("eventTree.xml");
-        return EventDOMParser.processXML(in_s);
+        initializeGoogleApiClient();
+        initializeGoogleMapView();
     }
 
     private void initializeSideBar() {
@@ -93,64 +65,13 @@ public class RadarActivity extends AppCompatActivity implements
         fragmentTransaction.add(R.id.SidebarLayout, sidebarFragment).commit();
     }
 
-    public int getStatusBarHeight() {
-        int result = 0;
-        int resourceId = getResources().getIdentifier("status_bar_height", "dimen", "android");
-        if (resourceId > 0) {
-            result = getResources().getDimensionPixelSize(resourceId);
-        }
-        return result;
-    }
 
-    public int getSideBarWidth() {
-        Display display = getWindowManager().getDefaultDisplay();
-        Point size = new Point();
-        display.getSize(size);
-        return (int) (size.x * SIDEBAR_WIDTH_PERCENTAGE);
-    }
-
-    @Override
-    public boolean dispatchTouchEvent(@NonNull MotionEvent motionEvent) {
-        mapView.dispatchTouchEvent(motionEvent);
-
-        return true;
-    }
-
-
-    private SupportMapFragment getSupportMapFragment() {
-        return (SupportMapFragment) getSupportFragmentManager().findFragmentById(R.id.map);
-    }
-
-    private void initializeMapView() {
-        //mapView = ((FrameLayout) getSupportMapFragment().getView()).getChildAt(0);
-        mapView = (GoogleMapView) findViewById(R.id.FragmentLayout);
-        mapView.setOnTouchListener(new View.OnTouchListener() {
-            @Override
-            public boolean onTouch(View v, MotionEvent motionEvent) {
-                Point currentPosition = new Point((int) motionEvent.getRawX() - getSideBarWidth(), (int) motionEvent.getRawY() - getStatusBarHeight());
-                LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
-                if (motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) {
-                    if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                        line = new PolylineOptions();
-                    }
-                    line.add(currentLatLng);
-                    if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
-                        googleMap.addPolyline(line);
-                        polyLines.add(line);
-                    }
-                } else {
-                    mapView.dispatchTouchEvent(motionEvent);
-                }
-                return true;
-            }
-        });
-    }
-
-    private void initializeGoogleMap() {
-        googleMap = getSupportMapFragment().getMap();
-        googleMap.setMyLocationEnabled(true);
-        googleMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
-        googleMap.getUiSettings().setMyLocationButtonEnabled(true);
+    private void initializeGoogleMapView(){
+        googleView = findViewById(R.id.MapLayout);
+        mapFragment = new GoogleMapFragment();
+        FragmentManager supportFragmentManager = getSupportFragmentManager();
+        android.support.v4.app.FragmentTransaction fragmentTransaction = supportFragmentManager.beginTransaction();
+        fragmentTransaction.add(R.id.MapLayout, mapFragment).commit();
     }
 
     private void initializeGoogleApiClient() {
@@ -167,7 +88,7 @@ public class RadarActivity extends AppCompatActivity implements
         googleApiClientBuilder.addApi(LocationServices.API);
         return googleApiClientBuilder.build();
     }
-
+/*
     private void handleNewLocation(Location location) {
         Log.d(TAG, location.toString());
 
@@ -176,29 +97,7 @@ public class RadarActivity extends AppCompatActivity implements
         LatLng latLng = new LatLng(currentLatitude, currentLongitude);
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
     }
-
-    private boolean lineIntersected(PolylineOptions eraserLine) {
-        lineLoop:
-        for (PolylineOptions line : polyLines) {
-            Point prev = null;
-            Point prevEraser = null;
-            for (LatLng latLng : line.getPoints()) {
-                Point currentPoint = googleMap.getProjection().toScreenLocation(latLng);
-                for (LatLng eraserLatLng : eraserLine.getPoints()) {
-                    Point currentEraserPoint = googleMap.getProjection().toScreenLocation(eraserLatLng);
-                    if (prev != null && prevEraser != null) {
-                        //Statement not finished!!!
-                        //double factorY = prevEraser.x*(prev.y-currentPoint.y)-prevEraser.y*(prev.x-currentPoint.x)+prev.y*()
-                    }
-                    prevEraser = currentEraserPoint;
-
-                }
-                prev = currentPoint;
-            }
-        }
-        return false;
-    }
-
+*/
     @Override
     public void onConnected(Bundle bundle) {
         Location location = LocationServices.FusedLocationApi.getLastLocation(googleApiClient);
@@ -210,7 +109,7 @@ public class RadarActivity extends AppCompatActivity implements
             LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest, this);
 
         } else {
-            handleNewLocation(location);
+           // handleNewLocation(location);
         }
     }
 
@@ -240,7 +139,6 @@ public class RadarActivity extends AppCompatActivity implements
     @Override
     protected void onResume() {
         super.onResume();
-        initializeGoogleMap();
         initializeGoogleApiClient();
     }
 

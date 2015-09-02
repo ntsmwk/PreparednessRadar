@@ -4,13 +4,11 @@ package at.jku.cis.radar.view;
 import android.app.Fragment;
 import android.os.Bundle;
 import android.text.TextUtils;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Toast;
 
-import com.unnamed.b.atv.model.TreeNode;
 import com.unnamed.b.atv.view.AndroidTreeView;
 
 import org.xml.sax.SAXException;
@@ -26,7 +24,6 @@ import at.jku.cis.radar.model.EventDOMParser;
 import at.jku.cis.radar.model.EventTreeBuilder;
 import at.jku.cis.radar.model.EventTreeNode;
 import at.jku.cis.radar.model.XMLEvent;
-import at.jku.cis.radar.view.treeViewHolder.SelectableItemHolder;
 
 public class SelectableTreeFragment extends Fragment {
     private AndroidTreeView tView;
