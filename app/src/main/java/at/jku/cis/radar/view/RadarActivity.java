@@ -12,8 +12,6 @@ import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
-import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -37,8 +35,6 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import at.jku.cis.radar.R;
 import at.jku.cis.radar.model.EventDOMParser;
-import at.jku.cis.radar.model.EventTreeBuilder;
-import at.jku.cis.radar.model.EventTreeNode;
 import at.jku.cis.radar.model.XMLEvent;
 
 public class RadarActivity extends AppCompatActivity implements
@@ -48,33 +44,21 @@ public class RadarActivity extends AppCompatActivity implements
     public static final String TAG = RadarActivity.class.getSimpleName();
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
     private final static double SIDEBAR_WIDTH_PERCENTAGE = 0.25;
-    private SelectableTreeFragment sidebarFragment;
+
     private View sidebarView;
 
-    private GoogleMapView mapView;
+    private View mapView;
     private GoogleMap googleMap;
-    private List<PolylineOptions> polyLines = new ArrayList<>();
-    private PolylineOptions line = null;
-    private PolylineOptions eraserLine = null;
-
     private GoogleApiClient googleApiClient;
-    private EventTreeNode rootEventNode;
 
-    private ImageView mEraserBtn;
+    private List<PolylineOptions> polyLines = new ArrayList<>();
+
+    private PolylineOptions line = null;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_radar);
-        List<XMLEvent> eventList = null;
-        try {
-            eventList = initializeEvents();
-        } catch (IOException | ParserConfigurationException | SAXException e) {
-            Log.e(TAG, "Exception: " + e.getMessage());
-            Toast.makeText(this, "Error when initializing Events!", Toast.LENGTH_SHORT).show();
-            System.exit(1);
-        }
-        rootEventNode = EventTreeBuilder.initializeEventTree(eventList);
         initializeMapView();
         initializeGoogleMap();
         initializeGoogleApiClient();
@@ -88,7 +72,7 @@ public class RadarActivity extends AppCompatActivity implements
 
     private void initializeSideBar() {
         sidebarView = findViewById(R.id.SidebarLayout);
-        sidebarFragment = new SelectableTreeFragment();
+        SelectableTreeFragment sidebarFragment = new SelectableTreeFragment();
         FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
         fragmentTransaction.add(R.id.SidebarLayout, sidebarFragment).commit();
     }
@@ -122,8 +106,7 @@ public class RadarActivity extends AppCompatActivity implements
     }
 
     private void initializeMapView() {
-        //mapView = ((FrameLayout) getSupportMapFragment().getView()).getChildAt(0);
-        mapView = (GoogleMapView) findViewById(R.id.FragmentLayout);
+        mapView = ((FrameLayout) getSupportMapFragment().getView()).getChildAt(0);
         mapView.setOnTouchListener(new View.OnTouchListener() {
             @Override
             public boolean onTouch(View v, MotionEvent motionEvent) {
