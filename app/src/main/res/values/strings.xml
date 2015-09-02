@@ -9,4 +9,6 @@
     <string name="changePen">Change Pen</string>
     <string name="contactus">Contact Us</string>
     <string name="about">About</string>
+    <string name="ic_check_box_outline">&#xe03b;</string>
+    <string name="ic_check_circle_blank">&#xe03e;</string>
 </resources>

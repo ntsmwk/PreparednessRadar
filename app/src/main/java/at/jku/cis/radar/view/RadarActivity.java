@@ -1,18 +1,21 @@
 package at.jku.cis.radar.view;
 
-import android.app.usage.UsageEvents;
+import android.app.FragmentTransaction;
 import android.content.IntentSender;
 import android.graphics.Point;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.FragmentActivity;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Display;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -24,7 +27,7 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.PolylineOptions;
-import com.unnamed.b.atv.model.TreeNode;
+import com.unnamed.b.atv.view.AndroidTreeView;
 
 import org.xml.sax.SAXException;
 
@@ -41,13 +44,15 @@ import at.jku.cis.radar.model.EventTreeBuilder;
 import at.jku.cis.radar.model.EventTreeNode;
 import at.jku.cis.radar.model.XMLEvent;
 
-public class RadarActivity extends FragmentActivity implements
+public class RadarActivity extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
         LocationListener {
     public static final String TAG = RadarActivity.class.getSimpleName();
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
     private final static double SIDEBAR_WIDTH_PERCENTAGE = 0.25;
+    private SelectableTreeFragment sidebarFragment;
+    private View sidebarView;
 
     private View mapView;
     private GoogleMap googleMap;
@@ -57,6 +62,7 @@ public class RadarActivity extends FragmentActivity implements
 
     private GoogleApiClient googleApiClient;
     private EventTreeNode rootEventNode;
+    private static final int SIDEBAR_VIEW_ID = 10101010;
 
     private ImageView mEraserBtn;
 
@@ -69,16 +75,26 @@ public class RadarActivity extends FragmentActivity implements
             eventList = initializeEvents();
         } catch (IOException | ParserConfigurationException | SAXException e) {
             Log.e(TAG, "Exception: " + e.getMessage());
+            Toast.makeText(this, "Error when initializing Events!", Toast.LENGTH_SHORT).show();
+            System.exit(1);
         }
         rootEventNode = EventTreeBuilder.initializeEventTree(eventList);
         intializeMapView();
         initializeGoogleMap();
         initializeGoogleApiClient();
+        initializeSideBar();
     }
 
     private List<XMLEvent> initializeEvents() throws IOException, ParserConfigurationException, SAXException {
         InputStream in_s = getApplicationContext().getAssets().open("eventTree.xml");
         return EventDOMParser.processXML(in_s);
+    }
+
+    private void initializeSideBar(){
+        sidebarView = findViewById(R.id.SidebarLayout);
+        sidebarFragment = new SelectableTreeFragment();
+        FragmentTransaction fragmentTransaction = getFragmentManager().beginTransaction();
+        fragmentTransaction.add(R.id.SidebarLayout, sidebarFragment).commit();
     }
 
     public int getStatusBarHeight() {
@@ -99,10 +115,8 @@ public class RadarActivity extends FragmentActivity implements
 
     @Override
     public boolean dispatchTouchEvent(@NonNull MotionEvent motionEvent) {
-
         Point currentPosition = new Point((int) motionEvent.getRawX() - getSideBarWidth(), (int) motionEvent.getRawY() - getStatusBarHeight());
         LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
-
         if (motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) {
             if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                 line = new PolylineOptions();
@@ -168,6 +182,7 @@ public class RadarActivity extends FragmentActivity implements
                 for (LatLng eraserLatLng : eraserLine.getPoints()) {
                     Point currentEraserPoint = googleMap.getProjection().toScreenLocation(eraserLatLng);
                     if (prev != null && prevEraser != null) {
+                        //Statement not finished!!!
                         //double factorY = prevEraser.x*(prev.y-currentPoint.y)-prevEraser.y*(prev.x-currentPoint.x)+prev.y*()
                     }
                     prevEraser = currentEraserPoint;
@@ -176,10 +191,8 @@ public class RadarActivity extends FragmentActivity implements
                 prev = currentPoint;
             }
         }
-
         return false;
     }
-
 
     @Override
     public void onConnected(Bundle bundle) {
@@ -216,7 +229,7 @@ public class RadarActivity extends FragmentActivity implements
 
     @Override
     public void onLocationChanged(Location location) {
-        handleNewLocation(location);
+
     }
 
     @Override

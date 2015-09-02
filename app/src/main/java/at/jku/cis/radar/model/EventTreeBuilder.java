@@ -9,7 +9,7 @@ public class EventTreeBuilder {
 
 
     public static EventTreeNode initializeEventTree(List<XMLEvent> eventList) {
-        TreeNode rootNode = new TreeNode("RootEvent");
+        TreeNode rootNode = TreeNode.root();
         XMLEvent rootEvent = new XMLEvent("RootEvent", eventList, null);
         EventTreeNode rootEventNode = new EventTreeNode(rootNode, rootEvent);
         generateSubEventNodes(rootEventNode, eventList);
@@ -20,6 +20,7 @@ public class EventTreeBuilder {
         EventTreeNode subNode;
         for (XMLEvent event : children) {
             subNode = new EventTreeNode(new TreeNode(event.getEventName()), event);
+            subNode.getTreeNode().setSelectable(true);
             if (event.getSubEventList() != null) {
                 generateSubEventNodes(subNode, event.getSubEventList());
             }
