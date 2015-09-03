@@ -48,10 +48,10 @@ public class RadarActivity extends AppCompatActivity implements
             public boolean onMenuItemClick(MenuItem menuItem) {
                 PenSetting penSetting = findGoogleView().getPenSetting();
                 if (PenMode.DRAWING.equals(penSetting.getPenMode())) {
-                    menuItem.setIcon(R.drawable.pen_icon);
+                    menuItem.setIcon(R.drawable.eraser_icon);
                     penSetting.setPenMode(PenMode.ERASING);
                 } else {
-                    menuItem.setIcon(R.drawable.eraser_icon);
+                    menuItem.setIcon(R.drawable.pen_icon);
                     penSetting.setPenMode(PenMode.DRAWING);
                 }
                 return true;
