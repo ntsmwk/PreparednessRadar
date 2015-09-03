@@ -9,19 +9,27 @@ import android.view.MotionEvent;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
+import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import at.jku.cis.radar.fragment.SelectableTreeFragment;
+import at.jku.cis.radar.model.Event;
+import at.jku.cis.radar.model.PenMode;
+import at.jku.cis.radar.model.PenSetting;
 
-public class GoogleView extends MapView {
+
+public class GoogleView extends MapView implements OnMapReadyCallback, SelectableTreeFragment.EventClickListener {
     private GoogleMap googleMap;
+
+    private PenSetting penSetting = new PenSetting();
+
     private List<PolylineOptions> polyLines = new ArrayList<>();
     private PolylineOptions line = null;
     private PolylineOptions eraserLine = null;
-    private boolean isErasing = false;
 
     public GoogleView(Context context) {
         super(context);
@@ -35,11 +43,22 @@ public class GoogleView extends MapView {
         super(context, attrs, defStyle);
     }
 
-    public void setMap(GoogleMap googleMap) {
+    public PenSetting getPenSetting() {
+        return penSetting;
+    }
+
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
         this.googleMap = googleMap;
         this.googleMap.setMyLocationEnabled(true);
         this.googleMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
         this.googleMap.getUiSettings().setMyLocationButtonEnabled(true);
+    }
+
+    @Override
+    public void handleEventClick(Event event) {
+        penSetting.setColor(event.getColor());
     }
 
     @Override
@@ -48,7 +67,7 @@ public class GoogleView extends MapView {
             Point currentPosition = new Point((int) motionEvent.getX(), (int) motionEvent.getY());
             LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
             if (motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) {
-                if (isErasing) {
+                if (PenMode.ERASING == penSetting.getPenMode()) {
                     if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
                         eraserLine = new PolylineOptions();
                     }
@@ -58,7 +77,7 @@ public class GoogleView extends MapView {
                     }
                 } else {
                     if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                        line = new PolylineOptions();
+                        line = new PolylineOptions().color(penSetting.getColor());
                     }
                     line.add(currentLatLng);
                     if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
@@ -73,12 +92,7 @@ public class GoogleView extends MapView {
         return true;
     }
 
-    public void setEraser() {
-        isErasing = !isErasing;
-    }
-
     private boolean lineIntersected(PolylineOptions eraserLine) {
-        lineLoop:
         for (PolylineOptions line : polyLines) {
             Point prev = null;
             Point prevEraser = null;

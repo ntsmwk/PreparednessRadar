@@ -18,31 +18,48 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import at.jku.cis.radar.R;
 import at.jku.cis.radar.adaptor.EventExpandableListAdapter;
-import at.jku.cis.radar.service.EventDOMParser;
 import at.jku.cis.radar.model.Event;
+import at.jku.cis.radar.service.EventDOMParser;
 
-public class SelectableTreeFragment extends Fragment {
+public class SelectableTreeFragment extends Fragment implements ExpandableListView.OnChildClickListener {
 
     private static final String EVENT_TREE_XML = "eventTree.xml";
-    private ExpandableListView expandableListView;
+
+    private EventExpandableListAdapter eventExpandableListAdapter;
+
+    private List<EventClickListener> eventClickListeners = new ArrayList<>();
 
     @Override
     public View onCreateView(final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_selectable_nodes, container, false);
-        expandableListView = (ExpandableListView) rootView.findViewById(R.id.lvExp);
-        expandableListView.setAdapter(new EventExpandableListAdapter(inflater.getContext(), getXMLEvents(inflater)));
+        ExpandableListView expandableListView = (ExpandableListView) rootView.findViewById(R.id.lvExp);
+        eventExpandableListAdapter = new EventExpandableListAdapter(inflater.getContext(), getEvents(inflater));
+        expandableListView.setOnChildClickListener(this);
+        expandableListView.setAdapter(eventExpandableListAdapter);
         return rootView;
     }
 
-    private List<Event> getXMLEvents(LayoutInflater inflater) {
-        List<Event> events = new ArrayList<>();
+    public void addEventClickListener(EventClickListener eventClickListener) {
+        eventClickListeners.add(eventClickListener);
+    }
+
+    @Override
+    public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
+        for (EventClickListener listener : eventClickListeners) {
+            listener.handleEventClick((Event) eventExpandableListAdapter.getChild(groupPosition, childPosition));
+        }
+        return true;
+    }
+
+    private List<Event> getEvents(LayoutInflater inflater) {
         try {
-            events = new EventDOMParser().processXML(inflater.getContext().getAssets().open(EVENT_TREE_XML));
+            return new EventDOMParser().processXML(inflater.getContext().getAssets().open(EVENT_TREE_XML));
         } catch (IOException | ParserConfigurationException | SAXException e) {
             throw new RuntimeException(e);
         }
-        return events;
     }
 
-
+    public interface EventClickListener {
+        void handleEventClick(Event event);
+    }
 }
