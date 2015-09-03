@@ -11,11 +11,11 @@
         android:layout_weight="0.17"
         android:layout_height="match_parent"></LinearLayout>
 
-    <LinearLayout
+    <at.jku.cis.radar.layout.GoogleView
         android:id="@+id/MapLayout"
         android:layout_height="match_parent"
         android:layout_width="0dp"
         android:layout_weight="0.83"
-        android:orientation="horizontal"></LinearLayout>
-
+        android:orientation="horizontal"></at.jku.cis.radar.layout.GoogleView>
+       >
 </LinearLayout>

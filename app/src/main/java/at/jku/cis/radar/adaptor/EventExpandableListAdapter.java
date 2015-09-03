@@ -14,12 +14,12 @@ import java.util.List;
 import at.jku.cis.radar.R;
 import at.jku.cis.radar.model.Event;
 
-public class XMLEventExpandableListAdapter extends BaseExpandableListAdapter {
+public class EventExpandableListAdapter extends BaseExpandableListAdapter {
 
     private Context context;
     private List<Event> events;
 
-    public XMLEventExpandableListAdapter(Context context, List<Event> events) {
+    public EventExpandableListAdapter(Context context, List<Event> events) {
         this.context = context;
         this.events = events;
     }

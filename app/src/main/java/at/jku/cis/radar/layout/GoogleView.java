@@ -2,11 +2,11 @@ package at.jku.cis.radar.layout;
 
 import android.content.Context;
 import android.graphics.Point;
+import android.util.AttributeSet;
 import android.view.MotionEvent;
-import android.widget.FrameLayout;
 
 import com.google.android.gms.maps.GoogleMap;
-import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.PolylineOptions;
 
@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 
-public class GoogleView extends FrameLayout implements OnMapReadyCallback {
+public class GoogleView extends MapView {
     private GoogleMap googleMap;
     private List<PolylineOptions> polyLines = new ArrayList<>();
     private PolylineOptions line = null;
@@ -23,8 +23,15 @@ public class GoogleView extends FrameLayout implements OnMapReadyCallback {
         super(context);
     }
 
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
+    public GoogleView(Context context, AttributeSet attrs) {
+        super(context, attrs);
+    }
+
+    public GoogleView(Context context, AttributeSet attrs, int defStyle) {
+        super(context, attrs, defStyle);
+    }
+
+    public void setMap(GoogleMap googleMap) {
         this.googleMap = googleMap;
         this.googleMap.setMyLocationEnabled(true);
         this.googleMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
@@ -33,16 +40,20 @@ public class GoogleView extends FrameLayout implements OnMapReadyCallback {
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent motionEvent) {
-        Point currentPosition = new Point((int) motionEvent.getX(), (int) motionEvent.getY());
-        LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
-        if (motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) {
-            if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                line = new PolylineOptions();
-            }
-            line.add(currentLatLng);
-            if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
-                googleMap.addPolyline(line);
-                polyLines.add(line);
+        if (googleMap != null) {
+            Point currentPosition = new Point((int) motionEvent.getX(), (int) motionEvent.getY());
+            LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
+            if (motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) {
+                if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                    line = new PolylineOptions();
+                }
+                line.add(currentLatLng);
+                if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                    googleMap.addPolyline(line);
+                    polyLines.add(line);
+                }
+            } else {
+                super.dispatchTouchEvent(motionEvent);
             }
         }
         return true;

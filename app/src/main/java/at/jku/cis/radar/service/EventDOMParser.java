@@ -1,4 +1,4 @@
-package at.jku.cis.radar.model;
+package at.jku.cis.radar.service;
 
 
 import android.graphics.Color;
@@ -17,6 +17,9 @@ import java.util.List;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
+
+import at.jku.cis.radar.model.Action;
+import at.jku.cis.radar.model.Event;
 
 public class EventDOMParser {
 
