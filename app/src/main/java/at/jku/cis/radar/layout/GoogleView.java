@@ -2,9 +2,11 @@ package at.jku.cis.radar.layout;
 
 import android.content.Context;
 import android.graphics.Point;
+import android.location.Location;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 
+import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.model.LatLng;
@@ -95,5 +97,12 @@ public class GoogleView extends MapView {
             }
         }
         return false;
+    }
+
+    public void handleNewLocation(Location location) {
+        double currentLatitude = location.getLatitude();
+        double currentLongitude = location.getLongitude();
+        LatLng latLng = new LatLng(currentLatitude, currentLongitude);
+        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
     }
 }

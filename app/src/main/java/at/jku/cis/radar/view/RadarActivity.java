@@ -4,12 +4,10 @@ import android.app.FragmentTransaction;
 import android.content.IntentSender;
 import android.location.Location;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -19,11 +17,6 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapFragment;
 import com.google.android.gms.maps.OnMapReadyCallback;
-import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.PolylineOptions;
-
-import java.util.ArrayList;
-import java.util.List;
 
 import at.jku.cis.radar.R;
 import at.jku.cis.radar.fragment.SelectableTreeFragment;
@@ -35,16 +28,8 @@ public class RadarActivity extends AppCompatActivity implements
         LocationListener, OnMapReadyCallback {
     public static final String TAG = RadarActivity.class.getSimpleName();
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
-    private final static double SIDEBAR_WIDTH_PERCENTAGE = 0.25;
 
-    private View sidebarView;
-    private View googleMapView;
-    private List<PolylineOptions> polyLines = new ArrayList<>();
-    private PolylineOptions line = null;
-
-    private PolylineOptions eraserLine = null;
     private GoogleApiClient googleApiClient;
-
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -65,7 +50,6 @@ public class RadarActivity extends AppCompatActivity implements
     }
 
     private void initializeSideBar() {
-        sidebarView = findViewById(R.id.SidebarLayout);
         SelectableTreeFragment selectableTreeFragment = new SelectableTreeFragment();
         getFragmentManager().beginTransaction().add(R.id.SidebarLayout, selectableTreeFragment).commit();
     }
@@ -85,13 +69,30 @@ public class RadarActivity extends AppCompatActivity implements
         return googleApiClientBuilder.build();
     }
 
-    private void handleNewLocation(Location location) {
-        Log.d(TAG, location.toString());
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        GoogleView googleView = findGoogleView();
+        googleView.setMap(googleMap);
+    }
 
-        double currentLatitude = location.getLatitude();
-        double currentLongitude = location.getLongitude();
-        LatLng latLng = new LatLng(currentLatitude, currentLongitude);
-        // googleMapView.getMap().moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        menu.getItem(0).setOnMenuItemClickListener(getEraserClickListener());
+        return true;
+    }
+
+    private MenuItem.OnMenuItemClickListener getEraserClickListener() {
+
+        return new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                GoogleView googleView = findGoogleView();
+                googleView.setEraser();
+
+                return true;
+            }
+        };
     }
 
     @Override
@@ -105,7 +106,7 @@ public class RadarActivity extends AppCompatActivity implements
             LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, locationRequest, this);
 
         } else {
-            handleNewLocation(location);
+            findGoogleView().handleNewLocation(location);
         }
     }
 
@@ -128,7 +129,7 @@ public class RadarActivity extends AppCompatActivity implements
 
     @Override
     public void onLocationChanged(Location location) {
-        handleNewLocation(location);
+        findGoogleView().handleNewLocation(location);
     }
 
     @Override
@@ -147,35 +148,7 @@ public class RadarActivity extends AppCompatActivity implements
         }
     }
 
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-    }
-
-    @Override
-    public void onMapReady(GoogleMap googleMap) {
-        GoogleView googleView = (GoogleView) findViewById(R.id.MapLayout);
-        googleView.setMap(googleMap);
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.main_menu, menu);
-        menu.getItem(0).setOnMenuItemClickListener(getEraserClickListener());
-        return true;
-    }
-
-    @NonNull
-    private MenuItem.OnMenuItemClickListener getEraserClickListener() {
-
-        return new MenuItem.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                GoogleView googleView = (GoogleView) findViewById(R.id.MapLayout);
-                googleView.setEraser();
-
-                return true;
-            }
-        };
+    private GoogleView findGoogleView() {
+        return (GoogleView) findViewById(R.id.MapLayout);
     }
 }
