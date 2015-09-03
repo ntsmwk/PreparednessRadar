@@ -2,6 +2,7 @@ package at.jku.cis.radar.adaptor;
 
 import android.content.Context;
 import android.graphics.Typeface;
+import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,16 +12,16 @@ import android.widget.TextView;
 import java.util.List;
 
 import at.jku.cis.radar.R;
-import at.jku.cis.radar.model.XMLEvent;
+import at.jku.cis.radar.model.Event;
 
-public class MyBaseExpandableListAdapter extends BaseExpandableListAdapter {
+public class EventExpandableListAdapter extends BaseExpandableListAdapter {
 
     private Context context;
-    private List<XMLEvent> xmlEvents;
+    private List<Event> events;
 
-    public MyBaseExpandableListAdapter(Context context, List<XMLEvent> xmlEvents) {
+    public EventExpandableListAdapter(Context context, List<Event> events) {
         this.context = context;
-        this.xmlEvents = xmlEvents;
+        this.events = events;
     }
 
     @Override
@@ -35,22 +36,23 @@ public class MyBaseExpandableListAdapter extends BaseExpandableListAdapter {
 
     @Override
     public int getGroupCount() {
-        return xmlEvents.size();
+        return events.size();
     }
 
     @Override
     public int getChildrenCount(int groupPosition) {
-        return xmlEvents.get(groupPosition).getSubEventList().size();
+        return events.get(groupPosition).getEvents().size();
     }
 
     @Override
     public Object getGroup(int groupPosition) {
-        return xmlEvents.get(groupPosition);
+        return events.get(groupPosition);
     }
 
     @Override
     public Object getChild(int groupPosition, int childPosition) {
-        return xmlEvents.get(groupPosition).getSubEventList().get(childPosition);
+        List<Event> children = events.get(groupPosition).getEvents();
+        return children != null ? children.get(childPosition) : 0;
     }
 
     @Override
@@ -66,21 +68,23 @@ public class MyBaseExpandableListAdapter extends BaseExpandableListAdapter {
 
     @Override
     public View getGroupView(int groupPosition, boolean isExpanded, View convertView, ViewGroup parent) {
-        XMLEvent xmlEvent = (XMLEvent) getGroup(groupPosition);
+        Event event = (Event) getGroup(groupPosition);
         if (convertView == null) {
             convertView = getLayoutInflater().inflate(R.layout.list_group, null);
         }
         TextView lblListHeader = (TextView) convertView
                 .findViewById(R.id.lblListHeader);
         lblListHeader.setTypeface(null, Typeface.BOLD);
-        lblListHeader.setText(xmlEvent.getEventName());
+        lblListHeader.setText(event.getName());
+        GradientDrawable bgShape = (GradientDrawable) lblListHeader.getBackground();
+        bgShape.setColor(event.getColor());
         return convertView;
     }
 
 
     @Override
     public View getChildView(int groupPosition, int childPosition, boolean isLastChild, View convertView, ViewGroup parent) {
-        XMLEvent xmlEvent = (XMLEvent) getChild(groupPosition, childPosition);
+        Event event = (Event) getChild(groupPosition, childPosition);
         if (convertView == null) {
             convertView = getLayoutInflater().inflate(R.layout.list_item, null);
         }
@@ -88,7 +92,7 @@ public class MyBaseExpandableListAdapter extends BaseExpandableListAdapter {
         TextView txtListChild = (TextView) convertView
                 .findViewById(R.id.lblListItem);
 
-        txtListChild.setText(xmlEvent.getEventName());
+        txtListChild.setText(event.getName());
         return convertView;
     }
 

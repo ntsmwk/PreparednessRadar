@@ -1,9 +1,9 @@
 package at.jku.cis.radar.model;
 
-public class XMLAction {
+public class Action {
     private String actionName;
 
-    public XMLAction(String actionName) {
+    public Action(String actionName) {
         this.actionName = actionName;
     }
 

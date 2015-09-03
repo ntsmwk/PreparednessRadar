@@ -8,14 +8,14 @@
     <LinearLayout android:id="@+id/SidebarLayout"
         android:orientation="horizontal"
         android:layout_width="0dp"
-        android:layout_weight="0.25"
+        android:layout_weight="0.17"
         android:layout_height="match_parent"></LinearLayout>
 
     <at.jku.cis.radar.layout.GoogleView
         android:id="@+id/MapLayout"
         android:layout_height="match_parent"
         android:layout_width="0dp"
-        android:layout_weight="0.75"
+        android:layout_weight="0.83"
         android:orientation="horizontal"></at.jku.cis.radar.layout.GoogleView>
-
+       >
 </LinearLayout>
