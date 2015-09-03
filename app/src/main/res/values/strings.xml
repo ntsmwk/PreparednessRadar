@@ -1,14 +1,8 @@
 <resources>
     <string name="app_name">Radar</string>
     <string name="title_activity_radar">Preparedness Radar</string>
-    <string name="title_activity_spen_settings">SpenSettings</string>
 
-    <string name="hello_world">Hello world!</string>
-    <string name="action_settings">Settings</string>
-    <string name="search">Search</string>
-    <string name="changePen">Change Pen</string>
-    <string name="contactus">Contact Us</string>
-    <string name="about">About</string>
     <string name="ic_check_box_outline">&#xe03b;</string>
     <string name="ic_check_circle_blank">&#xe03e;</string>
+    <string name="erase">Erase</string>
 </resources>

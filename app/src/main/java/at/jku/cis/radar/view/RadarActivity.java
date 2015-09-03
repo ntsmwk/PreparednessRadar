@@ -4,8 +4,11 @@ import android.app.FragmentTransaction;
 import android.content.IntentSender;
 import android.location.Location;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -153,5 +156,26 @@ public class RadarActivity extends AppCompatActivity implements
     public void onMapReady(GoogleMap googleMap) {
         GoogleView googleView = (GoogleView) findViewById(R.id.MapLayout);
         googleView.setMap(googleMap);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main_menu, menu);
+        menu.getItem(0).setOnMenuItemClickListener(getEraserClickListener());
+        return true;
+    }
+
+    @NonNull
+    private MenuItem.OnMenuItemClickListener getEraserClickListener() {
+
+        return new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                GoogleView googleView = (GoogleView) findViewById(R.id.MapLayout);
+                googleView.setEraser();
+
+                return true;
+            }
+        };
     }
 }

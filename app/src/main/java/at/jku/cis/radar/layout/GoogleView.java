@@ -18,6 +18,8 @@ public class GoogleView extends MapView {
     private GoogleMap googleMap;
     private List<PolylineOptions> polyLines = new ArrayList<>();
     private PolylineOptions line = null;
+    private PolylineOptions eraserLine = null;
+    private boolean isErasing = false;
 
     public GoogleView(Context context) {
         super(context);
@@ -44,19 +46,33 @@ public class GoogleView extends MapView {
             Point currentPosition = new Point((int) motionEvent.getX(), (int) motionEvent.getY());
             LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
             if (motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) {
-                if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                    line = new PolylineOptions();
+                if (isErasing) {
+                    if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                        eraserLine = new PolylineOptions();
+                    }
+                    eraserLine.add(currentLatLng);
+                    if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                       // lineIntersected(eraserLine);
+                    }
+                } else {
+                    if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+                        line = new PolylineOptions();
+                    }
+                    line.add(currentLatLng);
+                    if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+                        googleMap.addPolyline(line);
+                        polyLines.add(line);
+                    }
                 }
-                line.add(currentLatLng);
-                if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
-                    googleMap.addPolyline(line);
-                    polyLines.add(line);
-                }
-            } else {
+            }else {
                 super.dispatchTouchEvent(motionEvent);
             }
         }
         return true;
+    }
+
+    public void setEraser() {
+        isErasing = !isErasing;
     }
 
     private boolean lineIntersected(PolylineOptions eraserLine) {
