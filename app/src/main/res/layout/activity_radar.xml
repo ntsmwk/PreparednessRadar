@@ -11,20 +11,11 @@
         android:layout_weight="0.25"
         android:layout_height="match_parent"></LinearLayout>
 
-    <LinearLayout
+    <at.jku.cis.radar.layout.GoogleView
         android:id="@+id/MapLayout"
         android:layout_height="match_parent"
         android:layout_width="0dp"
         android:layout_weight="0.75"
-        android:orientation="horizontal"></LinearLayout>
-
-<!--
-    <fragment
-        android:id="@+id/map"
-        android:name="at.jku.cis.radar.fragment.GoogleMapFragment"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:layout_weight="0.75"></fragment>-->
-
+        android:orientation="horizontal"></at.jku.cis.radar.layout.GoogleView>
 
 </LinearLayout>

@@ -1,13 +1,11 @@
 package at.jku.cis.radar.view;
 
+import android.app.FragmentTransaction;
 import android.content.IntentSender;
-import android.graphics.Point;
 import android.location.Location;
 import android.os.Bundle;
-import android.support.v4.app.FragmentManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
-import android.view.Display;
 import android.view.View;
 
 import com.google.android.gms.common.ConnectionResult;
@@ -15,6 +13,9 @@ import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.MapFragment;
+import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.PolylineOptions;
 
@@ -22,13 +23,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import at.jku.cis.radar.R;
-import at.jku.cis.radar.fragment.GoogleMapFragment;
 import at.jku.cis.radar.fragment.SelectableTreeFragment;
+import at.jku.cis.radar.layout.GoogleView;
 
 public class RadarActivity extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
-        LocationListener {
+        LocationListener, OnMapReadyCallback {
     public static final String TAG = RadarActivity.class.getSimpleName();
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
     private final static double SIDEBAR_WIDTH_PERCENTAGE = 0.25;
@@ -52,9 +53,12 @@ public class RadarActivity extends AppCompatActivity implements
     }
 
     private void initializeGoogleMap() {
-        googleMapView = findViewById(R.id.MapLayout);
-        FragmentManager supportFragmentManager = getSupportFragmentManager();
-        supportFragmentManager.beginTransaction().add(R.id.MapLayout, new GoogleMapFragment()).commit();
+        MapFragment mapFragment = MapFragment.newInstance();
+        mapFragment.getMapAsync(this);
+        FragmentTransaction fragmentTransaction =
+                getFragmentManager().beginTransaction();
+        fragmentTransaction.add(R.id.MapLayout, mapFragment);
+        fragmentTransaction.commit();
     }
 
     private void initializeSideBar() {
@@ -143,5 +147,11 @@ public class RadarActivity extends AppCompatActivity implements
     @Override
     protected void onDestroy() {
         super.onDestroy();
+    }
+
+    @Override
+    public void onMapReady(GoogleMap googleMap) {
+        GoogleView googleView = (GoogleView) findViewById(R.id.MapLayout);
+        googleView.setMap(googleMap);
     }
 }
