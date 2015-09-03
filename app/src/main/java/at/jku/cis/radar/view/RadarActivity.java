@@ -8,8 +8,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.View;
-import android.widget.ExpandableListView;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -27,7 +25,7 @@ import at.jku.cis.radar.model.PenSetting;
 public class RadarActivity extends AppCompatActivity implements
         GoogleApiClient.ConnectionCallbacks,
         GoogleApiClient.OnConnectionFailedListener,
-        LocationListener, ExpandableListView.OnChildClickListener {
+        LocationListener {
     public static final String TAG = RadarActivity.class.getSimpleName();
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
 
@@ -58,15 +56,8 @@ public class RadarActivity extends AppCompatActivity implements
                 }
                 return true;
             }
-
         });
         return true;
-    }
-
-    @Override
-    public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
-        v.getB
-        return false;
     }
 
     private void initializeGoogleMap() {
@@ -80,7 +71,7 @@ public class RadarActivity extends AppCompatActivity implements
 
     private void initializeSideBar() {
         SelectableTreeFragment selectableTreeFragment = new SelectableTreeFragment();
-        selectableTreeFragment.setOnChildClickListener(this);
+        selectableTreeFragment.addEventClickListener(findGoogleView());
         getFragmentManager().beginTransaction().add(R.id.SidebarLayout, selectableTreeFragment).commit();
     }
 
