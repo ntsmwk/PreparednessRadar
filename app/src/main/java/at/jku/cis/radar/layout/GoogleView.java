@@ -52,7 +52,7 @@ public class GoogleView extends MapView {
                     }
                     eraserLine.add(currentLatLng);
                     if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
-                       // lineIntersected(eraserLine);
+                       lineIntersected(eraserLine);
                     }
                 } else {
                     if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
@@ -86,7 +86,16 @@ public class GoogleView extends MapView {
                     Point currentEraserPoint = googleMap.getProjection().toScreenLocation(eraserLatLng);
                     if (prev != null && prevEraser != null) {
                         //Statement not finished!!!
-                        //double factorY = prevEraser.x*(prev.y-currentPoint.y)-prevEraser.y*(prev.x-currentPoint.x)+prev.y*()
+
+                        int differenceXLine = prev.x - currentPoint.x;
+                        int differenceYLine = prev.y - currentPoint.y;
+                        int differenceXEraser = prevEraser.x - currentEraserPoint.x;
+                        int differenceYEraser = prevEraser.y - currentEraserPoint.y;
+                        int dividend = prevEraser.x * differenceYLine - prevEraser.y * differenceXLine + prev.y * differenceXLine - prev.x * differenceYLine;
+
+                        int divisor = differenceYEraser * (differenceXLine) - differenceXEraser * differenceYLine;
+                        double factorY = dividend/ divisor;
+
                     }
                     prevEraser = currentEraserPoint;
 
