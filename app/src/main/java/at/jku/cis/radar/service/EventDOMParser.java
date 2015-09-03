@@ -46,8 +46,7 @@ public class EventDOMParser {
         List<Event> eventList = new ArrayList<>();
         for (int i = 0; i < nodeList.getLength(); i++) {
             if (nodeList.item(i).getNodeType() == Node.ELEMENT_NODE && nodeList.item(i).getNodeName().equals(EVENT)) {
-                Node subEvent = nodeList.item(i);
-                eventList.add(generateEvent(subEvent));
+                eventList.add(generateEvent(nodeList.item(i)));
             }
         }
         return eventList;
@@ -65,7 +64,7 @@ public class EventDOMParser {
     }
 
     private Event generateEvent(Node node) {
-        List<Event> subEvent = null;
+        List<Event> events = null;
         List<Action> actions = null;
         String name = ((Element) node).getAttribute(NAME);
         int color = Color.parseColor(((Element) node).getAttribute(COLOR));
@@ -73,12 +72,12 @@ public class EventDOMParser {
         NodeList childNodes = node.getChildNodes();
         for (int i = 0; i < childNodes.getLength(); i++) {
             if (childNodes.item(i).getNodeName().equals(EVENTS)) {
-                subEvent = generateEvents(childNodes.item(i).getChildNodes());
+                events = generateEvents(childNodes.item(i).getChildNodes());
             } else if (childNodes.item(i).getNodeName().equals(ACTIONS)) {
                 actions = generateActions(childNodes.item(i).getChildNodes());
             }
         }
-        return new Event(name, color, subEvent, actions);
+        return new Event(name, color, events, actions);
     }
 
     private Action generateAction(Node node) {

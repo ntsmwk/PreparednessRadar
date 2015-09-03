@@ -17,8 +17,8 @@ import java.util.List;
 import javax.xml.parsers.ParserConfigurationException;
 
 import at.jku.cis.radar.R;
-import at.jku.cis.radar.adaptor.XMLEventExpandableListAdapter;
-import at.jku.cis.radar.model.EventDOMParser;
+import at.jku.cis.radar.adaptor.EventExpandableListAdapter;
+import at.jku.cis.radar.service.EventDOMParser;
 import at.jku.cis.radar.model.Event;
 
 public class SelectableTreeFragment extends Fragment {
@@ -30,7 +30,7 @@ public class SelectableTreeFragment extends Fragment {
     public View onCreateView(final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_selectable_nodes, container, false);
         expandableListView = (ExpandableListView) rootView.findViewById(R.id.lvExp);
-        expandableListView.setAdapter(new XMLEventExpandableListAdapter(inflater.getContext(), getXMLEvents(inflater)));
+        expandableListView.setAdapter(new EventExpandableListAdapter(inflater.getContext(), getXMLEvents(inflater)));
         return rootView;
     }
 

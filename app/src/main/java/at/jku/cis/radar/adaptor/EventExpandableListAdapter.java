@@ -51,7 +51,8 @@ public class EventExpandableListAdapter extends BaseExpandableListAdapter {
 
     @Override
     public Object getChild(int groupPosition, int childPosition) {
-        return events.get(groupPosition).getEvents().get(childPosition);
+        List<Event> children = events.get(groupPosition).getEvents();
+        return children != null ? children.get(childPosition) : 0;
     }
 
     @Override

@@ -8,7 +8,7 @@ public class Event {
     private List<Event> events;
     private List<Action> actions;
 
-    public Event(String name, int color, List<Event> subEvent, List<Action> actions) {
+    public Event(String name, int color, List<Event> events, List<Action> actions) {
         this.name = name;
         this.color = color;
         this.events = events;
