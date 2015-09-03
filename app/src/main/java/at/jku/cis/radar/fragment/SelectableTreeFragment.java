@@ -7,7 +7,6 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ExpandableListView;
-import android.widget.Toast;
 
 import org.xml.sax.SAXException;
 
@@ -18,30 +17,31 @@ import java.util.List;
 import javax.xml.parsers.ParserConfigurationException;
 
 import at.jku.cis.radar.R;
-import at.jku.cis.radar.adaptor.MyBaseExpandableListAdapter;
+import at.jku.cis.radar.adaptor.XMLEventExpandableListAdapter;
 import at.jku.cis.radar.model.EventDOMParser;
-import at.jku.cis.radar.model.XMLEvent;
+import at.jku.cis.radar.model.Event;
 
 public class SelectableTreeFragment extends Fragment {
 
+    private static final String EVENT_TREE_XML = "eventTree.xml";
     private ExpandableListView expandableListView;
 
     @Override
     public View onCreateView(final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_selectable_nodes, container, false);
         expandableListView = (ExpandableListView) rootView.findViewById(R.id.lvExp);
-        expandableListView.setAdapter(new MyBaseExpandableListAdapter(inflater.getContext(), getXMLEvents(inflater)));
+        expandableListView.setAdapter(new XMLEventExpandableListAdapter(inflater.getContext(), getXMLEvents(inflater)));
         return rootView;
     }
 
-    private List<XMLEvent> getXMLEvents(LayoutInflater inflater) {
-        List<XMLEvent> xmlEvents = new ArrayList<>();
+    private List<Event> getXMLEvents(LayoutInflater inflater) {
+        List<Event> events = new ArrayList<>();
         try {
-            xmlEvents = EventDOMParser.processXML(inflater.getContext().getAssets().open("eventTree.xml"));
+            events = new EventDOMParser().processXML(inflater.getContext().getAssets().open(EVENT_TREE_XML));
         } catch (IOException | ParserConfigurationException | SAXException e) {
             throw new RuntimeException(e);
         }
-        return xmlEvents;
+        return events;
     }
 
 
