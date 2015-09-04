@@ -31,7 +31,6 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
 
     private PenSetting penSetting = new PenSetting();
 
-    private List<PolylineOptions> polyLines = new ArrayList<>();
     private CopyOnWriteArrayList<PolylineOptions> polyLines = new CopyOnWriteArrayList<>();
     private PolylineOptions line = null;
     private PolylineOptions eraserLine = null;
@@ -94,30 +93,6 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
         return true;
     }
 
-    private void doPainting(MotionEvent motionEvent, LatLng currentLatLng) {
-        if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-            line = new PolylineOptions();
-        }
-        line.add(currentLatLng);
-        if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
-            googleMap.addPolyline(line);
-            polyLines.add(line);
-        }
-    }
-
-    private void doErasing(MotionEvent motionEvent, LatLng currentLatLng) {
-        if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-            eraserLine = new PolylineOptions();
-        }
-        eraserLine.add(currentLatLng);
-        if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
-            lineIntersected(eraserLine);
-        }
-    }
-
-    public void setEraser() {
-        isErasing = !isErasing;
-    }
 
     private boolean lineIntersected(PolylineOptions eraserLine) {
         Projection projection = googleMap.getProjection();
