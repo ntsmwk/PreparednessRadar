@@ -7,15 +7,13 @@ import android.util.AttributeSet;
 import android.view.Display;
 import android.view.MotionEvent;
 import android.view.WindowManager;
-import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
-import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
 
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -74,7 +72,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
                     }
                     eraserLine.add(currentLatLng);
                     if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
-                       lineIntersected(eraserLine);
+                        calculateLineIntersection(eraserLine);
                     }
                 } else {
                     if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
@@ -94,51 +92,49 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
     }
 
 
-    private boolean lineIntersected(PolylineOptions eraserLine) {
+    private boolean calculateLineIntersection(PolylineOptions eraserLine) {
         Projection projection = googleMap.getProjection();
         lineLoop:
         for (PolylineOptions line : polyLines) {
-
             Point prev = null;
-            Point prevEraser = null;
             for (LatLng latLng : line.getPoints()) {
                 Point currentPoint = projection.toScreenLocation(latLng);
                 if (!pointInScreen(currentPoint)) {
                     continue;
                 }
+                Point prevEraser = null;
                 for (LatLng eraserLatLng : eraserLine.getPoints()) {
                     Point currentEraserPoint = projection.toScreenLocation(eraserLatLng);
                     if (prev != null && prevEraser != null) {
-                        int differenceXLine = Math.abs(prev.x - currentPoint.x);
-                        int differenceYLine = Math.abs(prev.y - currentPoint.y);
-                        int differenceXEraser = Math.abs(prevEraser.x - currentEraserPoint.x);
-                        int differenceYEraser = Math.abs(prevEraser.y - currentEraserPoint.y);
-                        int smallestXEraser = findSmallest(prevEraser.x, currentEraserPoint.x);
-                        int smallestYEraser = findSmallest(prevEraser.y, currentEraserPoint.y);
-                        int smallestYLine = findSmallest(prev.y, currentPoint.y);
-                        int smallestXLine = findSmallest(prev.x, currentPoint.x);
-                        int dividend = smallestXEraser * differenceYLine - smallestYEraser * differenceXLine + smallestYLine * differenceXLine - smallestXLine * differenceYLine;
-                        int divisor = differenceYEraser * (differenceXLine) - differenceXEraser * differenceYLine;
-                        if (divisor == 0) {
-                            continue;
-                        }
-                        double factorY = (double) dividend / (double) divisor;
-
-                        double eraserLineEquation = smallestXEraser + differenceXEraser * factorY;
-                        double factorX = (eraserLineEquation - smallestXLine) / differenceXLine;
-                        if (checkFactor(factorX) && checkFactor(factorY)) {
+                        if (calculateIntersectionPoint(prev, currentPoint, prevEraser, currentEraserPoint)) {
                             polyLines.remove(line);
                             continue lineLoop;
                         }
                     }
                     prevEraser = currentEraserPoint;
-
                 }
                 prev = currentPoint;
             }
         }
         repaintMap();
-        return false;
+        return true;
+    }
+
+    private boolean calculateIntersectionPoint(Point prev, Point currentPoint, Point prevEraser, Point currentEraserPoint) {
+        int differenceXLine = prev.x - currentPoint.x;
+        int differenceYLine = prev.y - currentPoint.y;
+        int differenceXEraser = prevEraser.x - currentEraserPoint.x;
+        int differenceYEraser = prevEraser.y - currentEraserPoint.y;
+        int dividend = currentEraserPoint.x * differenceYLine - currentEraserPoint.y * differenceXLine + currentPoint.y * differenceXLine - currentPoint.x * differenceYLine;
+        int divisor = differenceYEraser * (differenceXLine) - differenceXEraser * differenceYLine;
+        if (divisor == 0) {
+            return false;
+        }
+        double factorY = (double) dividend / (double) divisor;
+
+        double eraserLineEquation = currentEraserPoint.x + differenceXEraser * factorY;
+        double factorX = (eraserLineEquation - currentPoint.x) / differenceXLine;
+        return (checkFactor(factorX) && checkFactor(factorY));
     }
 
     public void handleNewLocation(Location location) {
@@ -146,10 +142,6 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
         double currentLongitude = location.getLongitude();
         LatLng latLng = new LatLng(currentLatitude, currentLongitude);
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
-    }
-
-    private int findSmallest(int i, int j) {
-        return (i < j) ? i : j;
     }
 
     private void repaintMap() {
@@ -160,7 +152,6 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
     }
 
     private boolean pointInScreen(Point p) {
-
         Display display = wm.getDefaultDisplay();
         Point size = new Point();
         display.getSize(size);
