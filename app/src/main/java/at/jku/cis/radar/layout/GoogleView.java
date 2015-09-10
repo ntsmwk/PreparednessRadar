@@ -14,8 +14,9 @@ import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.PolygonOptions;
-import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.maps.android.geojson.GeoJsonFeature;
+import com.google.maps.android.geojson.GeoJsonGeometry;
+import com.google.maps.android.geojson.GeoJsonGeometryCollection;
 import com.google.maps.android.geojson.GeoJsonLayer;
 import com.google.maps.android.geojson.GeoJsonLineString;
 
@@ -23,6 +24,7 @@ import org.json.JSONObject;
 import org.xml.sax.SAXException;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -40,18 +42,17 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
     private GoogleMap googleMap;
 
     private PenSetting penSetting = new PenSetting();
-    private HashMap<String, CopyOnWriteArrayList<PolylineOptions>> polylineHashMap = new HashMap<>();
-    private PolylineOptions line = null;
-    private PolylineOptions eraserLine = null;
+    private HashMap<String, GeoJsonLayer> geoJsonLayerHashMap = new HashMap<>();
+    private GeoJsonLineString line = null;
+    private GeoJsonLineString eraserLine = null;
     private static final String EVENT_TREE_XML = "eventTree.xml";
-    private GeoJsonLayer geoJSONLayer;
 
     WindowManager wm;
 
     public GoogleView(Context context, AttributeSet attrs) {
         super(context, attrs);
         wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-        initializePolylineMap();
+        initializeGeoJsonLayerMap();
     }
 
     @Override
@@ -60,7 +61,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
         this.googleMap.setMyLocationEnabled(true);
         this.googleMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
         this.googleMap.getUiSettings().setMyLocationButtonEnabled(true);
-        initializeGeoJSONLayer();
+        initializeGeoJsonLayerMap();
 
     }
 
@@ -80,21 +81,20 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
             if (motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) {
                 if (PenMode.ERASING == penSetting.getPenMode()) {
                     if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                        eraserLine = new PolylineOptions();
+                        eraserLine = new GeoJsonLineString(new CopyOnWriteArrayList<LatLng>());
                     }
-                    eraserLine.add(currentLatLng);
+                    eraserLine.getCoordinates().add(currentLatLng);
                     if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                         //TODO excange when selection of additional Events on the Sidebar is available
-                        calculateLineIntersection(eraserLine, getCorrespondingPolylineList());
+                        calculateLineIntersection(eraserLine, getCorrespondingGeoJsonLayer());
                     }
                 } else {
                     if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-                        line = new PolylineOptions().color(penSetting.getColor());
+                        line = new GeoJsonLineString(new CopyOnWriteArrayList<LatLng>());
                     }
-                    line.add(currentLatLng);
+                    line.getCoordinates().add(currentLatLng);
                     if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
-                        googleMap.addPolyline(line);
-                        addLineToMap(line);
+                        addToGeoJsonLayer(line, getCorrespondingGeoJsonLayer());
                     }
                 }
             } else {
@@ -104,55 +104,55 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
         return true;
     }
 
-    private void initializePolylineMap() {
+    private void addToGeoJsonLayer(GeoJsonGeometry geometry, GeoJsonLayer geoJsonLayer){
+        GeoJsonFeature feature = new GeoJsonFeature(geometry, "id",null, null);
+        geoJsonLayer.addFeature(feature);
+    }
+
+    private void initializeGeoJsonLayerMap() {
         List<Event> eventList = null;
         try {
             eventList = new EventDOMParser().processXML(getContext().getAssets().open(EVENT_TREE_XML));
         } catch (IOException | ParserConfigurationException | SAXException e) {
             throw new RuntimeException(e);
         }
-        addSubeventsToPolylineMap(eventList);
+        addSubeventsToGeoJsonLayerMap(eventList);
     }
 
-    private void initializeGeoJSONLayer() {
-        //TODO get JSONObject from postGis DB....
-        geoJSONLayer = new GeoJsonLayer(getMap(), new JSONObject());
-        geoJSONLayer.addLayerToMap();
-    }
-
-    private void addSubeventsToPolylineMap(List<Event> eventList) {
+    private void addSubeventsToGeoJsonLayerMap(List<Event> eventList) {
+        GeoJsonLayer geoJsonLayer;
         for (Event event : eventList) {
-            polylineHashMap.put(event.getName(), new CopyOnWriteArrayList<PolylineOptions>());
+            //TODO init layer from DB
+            geoJsonLayer = new GeoJsonLayer(googleMap, new JSONObject());
+            geoJsonLayerHashMap.put(event.getName(), geoJsonLayer);
+            geoJsonLayer.addLayerToMap();
             if (event.getEvents() != null) {
-                addSubeventsToPolylineMap(event.getEvents());
+                addSubeventsToGeoJsonLayerMap(event.getEvents());
             }
         }
     }
 
-    private CopyOnWriteArrayList<PolylineOptions> getCorrespondingPolylineList() {
-        return polylineHashMap.get(penSetting.getPaintingEvent());
+    private GeoJsonLayer getCorrespondingGeoJsonLayer() {
+        return geoJsonLayerHashMap.get(penSetting.getPaintingEvent());
     }
 
-    private void addLineToMap(PolylineOptions line) {
-        getCorrespondingPolylineList().add(line);
-    }
-
-    private boolean calculateLineIntersection(PolylineOptions eraserLine, CopyOnWriteArrayList<PolylineOptions> polyLines) {
+    private boolean calculateLineIntersection(GeoJsonLineString eraserLine, GeoJsonLayer geoJsonLayer) {
         Projection projection = googleMap.getProjection();
+
         lineLoop:
-        for (PolylineOptions line : polyLines) {
+        for (GeoJsonFeature feature : geoJsonLayer.getFeatures()) {
             Point prev = null;
-            for (LatLng latLng : line.getPoints()) {
+            for (LatLng latLng : ((GeoJsonLineString)feature.getGeometry()).getCoordinates()){
                 Point currentPoint = projection.toScreenLocation(latLng);
                 if (!pointInScreen(currentPoint)) {
                     continue;
                 }
                 Point prevEraser = null;
-                for (LatLng eraserLatLng : eraserLine.getPoints()) {
+                for (LatLng eraserLatLng : eraserLine.getCoordinates()) {
                     Point currentEraserPoint = projection.toScreenLocation(eraserLatLng);
                     if (prev != null && prevEraser != null) {
                         if (calculateIntersectionPoint(prev, currentPoint, prevEraser, currentEraserPoint)) {
-                            polyLines.remove(line);
+                            getCorrespondingGeoJsonLayer().removeFeature(feature);
                             continue lineLoop;
                         }
                     }
@@ -164,7 +164,6 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
         repaintMap();
         return true;
     }
-
 
     private boolean calculateIntersectionPoint(Point prev, Point currentPoint, Point prevEraser, Point currentEraserPoint) {
         int differenceXLine = prev.x - currentPoint.x;
@@ -192,14 +191,8 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
 
     private void repaintMap() {
         googleMap.clear();
+        getCorrespondingGeoJsonLayer().addLayerToMap();
         //TODO excange when selection of additional Events on the Sidebar is available
-        paintPolylinesOnMap(getCorrespondingPolylineList());
-    }
-
-    private void paintPolylinesOnMap(CopyOnWriteArrayList<PolylineOptions> polyLines) {
-        for (PolylineOptions line : polyLines) {
-            googleMap.addPolyline(line);
-        }
     }
 
     private boolean pointInScreen(Point p) {
