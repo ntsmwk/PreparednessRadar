@@ -5,6 +5,7 @@ import android.graphics.Color;
 public class PenSetting {
     private PenMode penMode = PenMode.DRAWING;
     private int color = Color.BLACK;
+    private String paintingEvent;
 
     public PenMode getPenMode() {
         return penMode;
@@ -20,5 +21,13 @@ public class PenSetting {
 
     public void setColor(int color) {
         this.color = color;
+    }
+
+    public String getPaintingEvent() {
+        return paintingEvent;
+    }
+
+    public void setPaintingEvent(String paintingEvent) {
+        this.paintingEvent = paintingEvent;
     }
 }

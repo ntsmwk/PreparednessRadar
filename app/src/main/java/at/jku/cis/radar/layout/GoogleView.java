@@ -14,37 +14,45 @@ import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.PolygonOptions;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.maps.android.geojson.GeoJsonLayer;
+import com.google.maps.android.geojson.GeoJsonLineString;
 
+import org.json.JSONObject;
+import org.xml.sax.SAXException;
+
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import javax.xml.parsers.ParserConfigurationException;
 
 import at.jku.cis.radar.fragment.SelectableTreeFragment;
 import at.jku.cis.radar.model.Event;
 import at.jku.cis.radar.model.PenMode;
 import at.jku.cis.radar.model.PenSetting;
+import at.jku.cis.radar.service.EventDOMParser;
 
 
 public class GoogleView extends MapView implements OnMapReadyCallback, SelectableTreeFragment.EventClickListener {
     private GoogleMap googleMap;
 
     private PenSetting penSetting = new PenSetting();
-
-    private CopyOnWriteArrayList<PolylineOptions> polyLines = new CopyOnWriteArrayList<>();
+    private HashMap<String, CopyOnWriteArrayList<PolylineOptions>> polylineHashMap = new HashMap<>();
     private PolylineOptions line = null;
     private PolylineOptions eraserLine = null;
+    private static final String EVENT_TREE_XML = "eventTree.xml";
+    private GeoJsonLayer geoJSONLayer;
 
     WindowManager wm;
 
     public GoogleView(Context context, AttributeSet attrs) {
         super(context, attrs);
         wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
+        initializePolylineMap();
     }
-
-
-    public PenSetting getPenSetting() {
-        return penSetting;
-    }
-
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
@@ -52,17 +60,21 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
         this.googleMap.setMyLocationEnabled(true);
         this.googleMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
         this.googleMap.getUiSettings().setMyLocationButtonEnabled(true);
+        initializeGeoJSONLayer();
 
     }
 
     @Override
     public void handleEventClick(Event event) {
         penSetting.setColor(event.getColor());
+        penSetting.setPaintingEvent(event.getName());
+        repaintMap();
     }
+
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent motionEvent) {
-        if (googleMap != null) {
+        if (googleMap != null && penSetting.getPaintingEvent() != null) {
             Point currentPosition = new Point((int) motionEvent.getX(), (int) motionEvent.getY());
             LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
             if (motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) {
@@ -72,7 +84,8 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
                     }
                     eraserLine.add(currentLatLng);
                     if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
-                        calculateLineIntersection(eraserLine);
+                        //TODO excange when selection of additional Events on the Sidebar is available
+                        calculateLineIntersection(eraserLine, getCorrespondingPolylineList());
                     }
                 } else {
                     if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
@@ -81,7 +94,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
                     line.add(currentLatLng);
                     if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
                         googleMap.addPolyline(line);
-                        polyLines.add(line);
+                        addLineToMap(line);
                     }
                 }
             } else {
@@ -91,8 +104,40 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
         return true;
     }
 
+    private void initializePolylineMap() {
+        List<Event> eventList = null;
+        try {
+            eventList = new EventDOMParser().processXML(getContext().getAssets().open(EVENT_TREE_XML));
+        } catch (IOException | ParserConfigurationException | SAXException e) {
+            throw new RuntimeException(e);
+        }
+        addSubeventsToPolylineMap(eventList);
+    }
 
-    private boolean calculateLineIntersection(PolylineOptions eraserLine) {
+    private void initializeGeoJSONLayer() {
+        //TODO get JSONObject from postGis DB....
+        geoJSONLayer = new GeoJsonLayer(getMap(), new JSONObject());
+        geoJSONLayer.addLayerToMap();
+    }
+
+    private void addSubeventsToPolylineMap(List<Event> eventList) {
+        for (Event event : eventList) {
+            polylineHashMap.put(event.getName(), new CopyOnWriteArrayList<PolylineOptions>());
+            if (event.getEvents() != null) {
+                addSubeventsToPolylineMap(event.getEvents());
+            }
+        }
+    }
+
+    private CopyOnWriteArrayList<PolylineOptions> getCorrespondingPolylineList() {
+        return polylineHashMap.get(penSetting.getPaintingEvent());
+    }
+
+    private void addLineToMap(PolylineOptions line) {
+        getCorrespondingPolylineList().add(line);
+    }
+
+    private boolean calculateLineIntersection(PolylineOptions eraserLine, CopyOnWriteArrayList<PolylineOptions> polyLines) {
         Projection projection = googleMap.getProjection();
         lineLoop:
         for (PolylineOptions line : polyLines) {
@@ -120,6 +165,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
         return true;
     }
 
+
     private boolean calculateIntersectionPoint(Point prev, Point currentPoint, Point prevEraser, Point currentEraserPoint) {
         int differenceXLine = prev.x - currentPoint.x;
         int differenceYLine = prev.y - currentPoint.y;
@@ -146,6 +192,11 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
 
     private void repaintMap() {
         googleMap.clear();
+        //TODO excange when selection of additional Events on the Sidebar is available
+        paintPolylinesOnMap(getCorrespondingPolylineList());
+    }
+
+    private void paintPolylinesOnMap(CopyOnWriteArrayList<PolylineOptions> polyLines) {
         for (PolylineOptions line : polyLines) {
             googleMap.addPolyline(line);
         }
@@ -164,8 +215,12 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
         return true;
     }
 
-
     private boolean checkFactor(double factor) {
         return (factor <= 1.0) && (factor >= 0.0);
+    }
+
+
+    public PenSetting getPenSetting() {
+        return penSetting;
     }
 }
