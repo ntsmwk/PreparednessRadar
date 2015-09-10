@@ -21,21 +21,21 @@ import at.jku.cis.radar.adaptor.EventExpandableListAdapter;
 import at.jku.cis.radar.model.Event;
 import at.jku.cis.radar.service.EventDOMParser;
 
-public class SelectableTreeFragment extends Fragment implements ExpandableListView.OnChildClickListener {
+public class SelectableTreeFragment extends Fragment implements ExpandableListView.OnGroupExpandListener, ExpandableListView.OnChildClickListener, ExpandableListView.OnGroupCollapseListener {
 
     private static final String EVENT_TREE_XML = "eventTree.xml";
 
-    private EventExpandableListAdapter eventExpandableListAdapter;
-
     private List<EventClickListener> eventClickListeners = new ArrayList<>();
+    private ExpandableListView expandableListView;
 
     @Override
     public View onCreateView(final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_selectable_nodes, container, false);
-        ExpandableListView expandableListView = (ExpandableListView) rootView.findViewById(R.id.lvExp);
-        eventExpandableListAdapter = new EventExpandableListAdapter(inflater.getContext(), getEvents(inflater));
+        expandableListView = (ExpandableListView) rootView.findViewById(R.id.lvExp);
         expandableListView.setOnChildClickListener(this);
-        expandableListView.setAdapter(eventExpandableListAdapter);
+        expandableListView.setOnGroupExpandListener(this);
+        expandableListView.setOnGroupCollapseListener(this);
+        expandableListView.setAdapter(new EventExpandableListAdapter(inflater.getContext(), getEvents(inflater)));
         return rootView;
     }
 
@@ -44,11 +44,22 @@ public class SelectableTreeFragment extends Fragment implements ExpandableListVi
     }
 
     @Override
-    public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
-        for (EventClickListener listener : eventClickListeners) {
-            listener.handleEventClick((Event) eventExpandableListAdapter.getChild(groupPosition, childPosition));
-        }
+    public boolean onChildClick(ExpandableListView parent, View view, int groupPosition, int childPosition, long id) {
+        Event event = getEvent(parent, groupPosition, childPosition);
+        event.setVisible(!event.isVisible());
+        expandableListView.invalidateViews();
+        notifyListeners(event);
         return true;
+    }
+
+    private Event getEvent(ExpandableListView parent, int groupPosition, int childPosition) {
+        return (Event) parent.getExpandableListAdapter().getChild(groupPosition, childPosition);
+    }
+
+    private void notifyListeners(Event event) {
+        for (EventClickListener listener : eventClickListeners) {
+            listener.handleEventClick(event);
+        }
     }
 
     private List<Event> getEvents(LayoutInflater inflater) {
@@ -57,6 +68,15 @@ public class SelectableTreeFragment extends Fragment implements ExpandableListVi
         } catch (IOException | ParserConfigurationException | SAXException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public void onGroupExpand(int groupPosition) {
+    }
+
+    @Override
+    public void onGroupCollapse(int groupPosition) {
+
     }
 
     public interface EventClickListener {

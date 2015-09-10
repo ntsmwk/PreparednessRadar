@@ -5,6 +5,8 @@ import java.util.List;
 public class Event {
     private String name;
     private int color;
+    private boolean visible = true;
+    private boolean selected = true;
     private List<Event> events;
     private List<Action> actions;
 
@@ -29,6 +31,22 @@ public class Event {
 
     public void setColor(int color) {
         this.color = color;
+    }
+
+    public boolean isVisible() {
+        return visible;
+    }
+
+    public void setVisible(boolean visible) {
+        this.visible = visible;
+    }
+
+    public boolean isSelected() {
+        return selected;
+    }
+
+    public void setSelected(boolean selected) {
+        this.selected = selected;
     }
 
     public List<Event> getEvents() {

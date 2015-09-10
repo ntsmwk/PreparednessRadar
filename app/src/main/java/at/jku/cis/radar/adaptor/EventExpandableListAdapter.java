@@ -1,6 +1,7 @@
 package at.jku.cis.radar.adaptor;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.view.LayoutInflater;
@@ -52,7 +53,7 @@ public class EventExpandableListAdapter extends BaseExpandableListAdapter {
     @Override
     public Object getChild(int groupPosition, int childPosition) {
         List<Event> children = events.get(groupPosition).getEvents();
-        return children != null ? children.get(childPosition) : 0;
+        return children != null ? children.get(childPosition) : null;
     }
 
     @Override
@@ -68,31 +69,35 @@ public class EventExpandableListAdapter extends BaseExpandableListAdapter {
 
     @Override
     public View getGroupView(int groupPosition, boolean isExpanded, View convertView, ViewGroup parent) {
-        Event event = (Event) getGroup(groupPosition);
+        final Event event = (Event) getGroup(groupPosition);
         if (convertView == null) {
             convertView = getLayoutInflater().inflate(R.layout.list_group, null);
         }
-        TextView lblListHeader = (TextView) convertView
+        TextView textView = (TextView) convertView
                 .findViewById(R.id.lblListHeader);
-        lblListHeader.setTypeface(null, Typeface.BOLD);
-        lblListHeader.setText(event.getName());
-        GradientDrawable bgShape = (GradientDrawable) lblListHeader.getBackground();
-        bgShape.setColor(event.getColor());
+        textView.setTypeface(null, Typeface.BOLD);
+        textView.setText(event.getName());
+        ((GradientDrawable) textView.getBackground()).setColor(event.getColor());
         return convertView;
     }
 
 
     @Override
     public View getChildView(int groupPosition, int childPosition, boolean isLastChild, View convertView, ViewGroup parent) {
-        Event event = (Event) getChild(groupPosition, childPosition);
+        final Event event = (Event) getChild(groupPosition, childPosition);
         if (convertView == null) {
             convertView = getLayoutInflater().inflate(R.layout.list_item, null);
         }
-
-        TextView txtListChild = (TextView) convertView
+        if (event.isVisible()) {
+            convertView.setBackgroundColor(Color.WHITE);
+            convertView.setAlpha(1.0f);
+        } else {
+            convertView.setBackgroundColor(Color.GRAY);
+            convertView.setAlpha(0.2f);
+        }
+        TextView textView = (TextView) convertView
                 .findViewById(R.id.lblListItem);
-
-        txtListChild.setText(event.getName());
+        textView.setText(event.getName());
         return convertView;
     }
 
@@ -100,5 +105,6 @@ public class EventExpandableListAdapter extends BaseExpandableListAdapter {
     private LayoutInflater getLayoutInflater() {
         return (LayoutInflater) context
                 .getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+
     }
 }
