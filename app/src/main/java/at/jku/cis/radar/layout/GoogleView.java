@@ -21,31 +21,27 @@ import com.google.maps.android.geojson.GeoJsonLineString;
 import com.google.maps.android.geojson.GeoJsonLineStringStyle;
 
 import org.json.JSONObject;
-import org.xml.sax.SAXException;
 
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
-
-import javax.xml.parsers.ParserConfigurationException;
 
 import at.jku.cis.radar.fragment.SelectableTreeFragment;
 import at.jku.cis.radar.model.Event;
 import at.jku.cis.radar.model.PenMode;
 import at.jku.cis.radar.model.PenSetting;
-import at.jku.cis.radar.service.EventDOMParser;
 
 
 public class GoogleView extends MapView implements OnMapReadyCallback, SelectableTreeFragment.EventClickListener {
     private GoogleMap googleMap;
 
     private PenSetting penSetting = new PenSetting();
-    private HashMap<String, GeoJsonLayer> geoJsonLayerHashMap = new HashMap<>();
+    private Map<String, GeoJsonLayer> geoJsonLayers = new HashMap<>();
+
     private GeoJsonLineString line = null;
     private GeoJsonLineString eraserLine = null;
-    private static final String EVENT_TREE_XML = "eventTree.xml";
+
     private boolean paintingEnabled = true;
 
     WindowManager wm;
@@ -53,7 +49,6 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
     public GoogleView(Context context, AttributeSet attrs) {
         super(context, attrs);
         wm = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
-        initializeGeoJsonLayerMap();
     }
 
     @Override
@@ -62,12 +57,11 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
         this.googleMap.setMyLocationEnabled(true);
         this.googleMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
         this.googleMap.getUiSettings().setMyLocationButtonEnabled(true);
-        initializeGeoJsonLayerMap();
     }
 
     @Override
     public void handleEventVisibleChanged(Event event) {
-        GeoJsonLayer geoJsonLayer = geoJsonLayerHashMap.get(event.getName());
+        GeoJsonLayer geoJsonLayer = findGeoJsonLayerByEventName(event.getName());
         if (event.isVisible()) {
             geoJsonLayer.addLayerToMap();
         } else {
@@ -77,9 +71,22 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
 
     @Override
     public void handleEventSelectionChanged(Event event) {
+        GeoJsonLayer geoJsonLayer = findGeoJsonLayerByEventName(event.getName());
+        if (event.isSelected()) {
+            geoJsonLayer.addLayerToMap();
+        }
         paintingEnabled = event.isSelected();
         penSetting.setColor(event.getColor());
         penSetting.setPaintingEvent(event.getName());
+    }
+
+    private GeoJsonLayer findGeoJsonLayerByEventName(String eventName) {
+        GeoJsonLayer geoJsonLayer = geoJsonLayers.get(eventName);
+        if (geoJsonLayer == null) {
+            geoJsonLayer = new GeoJsonLayer(googleMap, new JSONObject());
+            geoJsonLayers.put(eventName, geoJsonLayer);
+        }
+        return geoJsonLayer;
     }
 
     @Override
@@ -121,37 +128,14 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
         geoJsonLayer.addFeature(feature);
     }
 
-    private void initializeGeoJsonLayerMap() {
-        List<Event> eventList = null;
-        try {
-            eventList = new EventDOMParser().processXML(getContext().getAssets().open(EVENT_TREE_XML));
-        } catch (IOException | ParserConfigurationException | SAXException e) {
-            throw new RuntimeException(e);
-        }
-        addSubeventsToGeoJsonLayerMap(eventList);
-    }
-
-    private void addSubeventsToGeoJsonLayerMap(List<Event> eventList) {
-        GeoJsonLayer geoJsonLayer;
-        for (Event event : eventList) {
-            //TODO init layer from DB
-            geoJsonLayer = new GeoJsonLayer(googleMap, new JSONObject());
-            geoJsonLayerHashMap.put(event.getName(), geoJsonLayer);
-            geoJsonLayer.addLayerToMap();
-            if (event.getEvents() != null) {
-                addSubeventsToGeoJsonLayerMap(event.getEvents());
-            }
-        }
-    }
-
     private GeoJsonLayer getCorrespondingGeoJsonLayer() {
-        return geoJsonLayerHashMap.get(penSetting.getPaintingEvent());
+        return geoJsonLayers.get(penSetting.getPaintingEvent());
     }
 
     private boolean calculateLineIntersection(GeoJsonLineString eraserLine) {
         Projection projection = googleMap.getProjection();
-        for (GeoJsonLayer geoJsonLayer : geoJsonLayerHashMap.values()) {
-            if(!geoJsonLayer.isLayerOnMap()){
+        for (GeoJsonLayer geoJsonLayer : this.geoJsonLayers.values()) {
+            if (!geoJsonLayer.isLayerOnMap()) {
                 continue;
             }
             ArrayList<GeoJsonFeature> removeList = new ArrayList<>();
@@ -177,7 +161,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
                     prev = currentPoint;
                 }
             }
-            for(GeoJsonFeature feature : removeList){
+            for (GeoJsonFeature feature : removeList) {
                 geoJsonLayer.removeFeature(feature);
             }
         }
