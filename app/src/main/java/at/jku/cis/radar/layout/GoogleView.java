@@ -3,6 +3,7 @@ package at.jku.cis.radar.layout;
 import android.content.Context;
 import android.graphics.Point;
 import android.location.Location;
+import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.view.Display;
 import android.view.MotionEvent;
@@ -90,7 +91,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
     }
 
     @Override
-    public boolean dispatchTouchEvent(MotionEvent motionEvent) {
+    public boolean dispatchTouchEvent(@NonNull MotionEvent motionEvent) {
         if (googleMap != null && penSetting.getPaintingEvent() != null && paintingEnabled) {
             Point currentPosition = new Point((int) motionEvent.getX(), (int) motionEvent.getY());
             LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
@@ -196,13 +197,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
         Display display = wm.getDefaultDisplay();
         Point size = new Point();
         display.getSize(size);
-        if (p.x < 0 || p.y < 0) {
-            return false;
-        }
-        if (p.x > size.x || p.y > size.y) {
-            return false;
-        }
-        return true;
+        return !(p.x < 0 || p.y < 0) && !(p.x > size.x || p.y > size.y);
     }
 
     private boolean checkFactor(double factor) {
