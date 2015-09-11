@@ -46,6 +46,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
     private GeoJsonLineString line = null;
     private GeoJsonLineString eraserLine = null;
     private static final String EVENT_TREE_XML = "eventTree.xml";
+    private boolean paintingEnabled = true;
 
     WindowManager wm;
 
@@ -65,13 +66,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
     }
 
     @Override
-    public void handleEventClick(Event event) {
-        penSetting.setColor(event.getColor());
-        penSetting.setPaintingEvent(event.getName());
-        setLayerVisibility(event);
-    }
-
-    private void setLayerVisibility(Event event) {
+    public void handleEventVisibleChanged(Event event) {
         GeoJsonLayer geoJsonLayer = geoJsonLayerHashMap.get(event.getName());
         if (event.isVisible()) {
             geoJsonLayer.addLayerToMap();
@@ -80,10 +75,16 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
         }
     }
 
+    @Override
+    public void handleEventSelectionChanged(Event event) {
+        paintingEnabled = event.isSelected();
+        penSetting.setColor(event.getColor());
+        penSetting.setPaintingEvent(event.getName());
+    }
 
     @Override
     public boolean dispatchTouchEvent(MotionEvent motionEvent) {
-        if (googleMap != null && penSetting.getPaintingEvent() != null) {
+        if (googleMap != null && penSetting.getPaintingEvent() != null && paintingEnabled) {
             Point currentPosition = new Point((int) motionEvent.getX(), (int) motionEvent.getY());
             LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
             if (motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) {
