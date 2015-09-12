@@ -19,6 +19,7 @@ import com.google.android.gms.maps.MapFragment;
 import at.jku.cis.radar.R;
 import at.jku.cis.radar.fragment.SelectableTreeFragment;
 import at.jku.cis.radar.layout.GoogleView;
+import at.jku.cis.radar.model.DrawMode;
 import at.jku.cis.radar.model.PenMode;
 import at.jku.cis.radar.model.PenSetting;
 
@@ -43,20 +44,10 @@ public class RadarActivity extends AppCompatActivity implements
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main_menu, menu);
-        menu.findItem(R.id.erase).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem menuItem) {
-                PenSetting penSetting = findGoogleView().getPenSetting();
-                if (PenMode.DRAWING.equals(penSetting.getPenMode())) {
-                    menuItem.setIcon(R.drawable.eraser_icon);
-                    penSetting.setPenMode(PenMode.ERASING);
-                } else {
-                    menuItem.setIcon(R.drawable.pen_icon);
-                    penSetting.setPenMode(PenMode.DRAWING);
-                }
-                return true;
-            }
-        });
+        setEraserMenuClickListener(menu);
+        setLineMenuClickListener(menu);
+        setPolygonMenuClickListener(menu);
+        setMarkerMenuClickListener(menu);
         return true;
     }
 
@@ -82,16 +73,58 @@ public class RadarActivity extends AppCompatActivity implements
         googleApiClient.connect();
     }
 
-    private GoogleApiClient buildGoogleApiClient() {
-        GoogleApiClient.Builder googleApiClientBuilder = new GoogleApiClient.Builder(this);
-        googleApiClientBuilder.addConnectionCallbacks(this);
-        googleApiClientBuilder.addOnConnectionFailedListener(this);
-        googleApiClientBuilder.addApi(LocationServices.API);
-        return googleApiClientBuilder.build();
-    }
-
     private GoogleView findGoogleView() {
         return (GoogleView) findViewById(R.id.MapLayout);
+    }
+
+    private void setEraserMenuClickListener(Menu menu) {
+        menu.findItem(R.id.erase).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem menuItem) {
+                PenSetting penSetting = findGoogleView().getPenSetting();
+                if (PenMode.DRAWING.equals(penSetting.getPenMode())) {
+                    menuItem.setIcon(R.drawable.eraser_icon);
+                    penSetting.setPenMode(PenMode.ERASING);
+                } else {
+                    menuItem.setIcon(R.drawable.pen_icon);
+                    penSetting.setPenMode(PenMode.DRAWING);
+                }
+                return true;
+            }
+        });
+    }
+
+    private void setLineMenuClickListener(Menu menu) {
+        menu.findItem(R.id.line).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                PenSetting penSetting = findGoogleView().getPenSetting();
+                penSetting.setDrawMode(DrawMode.LINE);
+                return true;
+            }
+        });
+    }
+
+    private void setPolygonMenuClickListener(Menu menu) {
+        menu.findItem(R.id.polygon).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                PenSetting penSetting = findGoogleView().getPenSetting();
+                penSetting.setDrawMode(DrawMode.POLYGON);
+                return true;
+            }
+        });
+    }
+
+    private void setMarkerMenuClickListener(Menu menu) {
+        menu.findItem(R.id.marker).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                PenSetting penSetting = findGoogleView().getPenSetting();
+                penSetting.setDrawMode(DrawMode.MARKER);
+                return true;
+            }
+        });
     }
 
     @Override
@@ -106,6 +139,14 @@ public class RadarActivity extends AppCompatActivity implements
         } else {
             findGoogleView().handleNewLocation(location);
         }
+    }
+
+    private GoogleApiClient buildGoogleApiClient() {
+        GoogleApiClient.Builder googleApiClientBuilder = new GoogleApiClient.Builder(this);
+        googleApiClientBuilder.addConnectionCallbacks(this);
+        googleApiClientBuilder.addOnConnectionFailedListener(this);
+        googleApiClientBuilder.addApi(LocationServices.API);
+        return googleApiClientBuilder.build();
     }
 
     @Override

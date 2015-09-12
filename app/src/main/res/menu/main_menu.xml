@@ -4,11 +4,30 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context=".RadarActivity">
 
+
+    <item
+        android:id="@+id/marker"
+        android:orderInCategory="100"
+        android:title="@string/marker"
+        android:icon="@drawable/marker_icon"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/line"
+        android:orderInCategory="100"
+        android:title="@string/line"
+        android:icon="@drawable/line_icon"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/polygon"
+        android:orderInCategory="100"
+        android:title="@string/polygon"
+        android:icon="@drawable/polygon_icon"
+        app:showAsAction="always" />
+
     <item
         android:id="@+id/erase"
         android:icon="@drawable/pen_icon"
         android:orderInCategory="100"
         android:title="@string/erase"
         app:showAsAction="always" />
-
 </menu>

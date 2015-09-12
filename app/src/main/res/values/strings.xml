@@ -5,4 +5,7 @@
     <string name="ic_check_box_outline">&#xe03b;</string>
     <string name="ic_check_circle_blank">&#xe03e;</string>
     <string name="erase">Erase</string>
+    <string name="marker">Marker</string>
+    <string name="line">Line</string>
+    <string name="polygon">Polygon</string>
 </resources>
