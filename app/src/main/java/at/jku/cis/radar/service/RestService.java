@@ -5,7 +5,7 @@ import java.util.List;
 import at.jku.cis.radar.model.Event;
 import retrofit.http.GET;
 
-public interface RestClient {
+public interface RestService {
 
     @GET("/events")
     List<Event> getEvents();
