@@ -8,4 +8,5 @@
     <string name="marker">Marker</string>
     <string name="line">Line</string>
     <string name="polygon">Polygon</string>
+    <string name="edit">Edit</string>
 </resources>

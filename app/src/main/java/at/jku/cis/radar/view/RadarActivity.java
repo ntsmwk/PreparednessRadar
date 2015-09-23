@@ -48,6 +48,7 @@ public class RadarActivity extends AppCompatActivity implements
         setLineMenuClickListener(menu);
         setPolygonMenuClickListener(menu);
         setMarkerMenuClickListener(menu);
+        setEditMenuClickListener(menu);
         return true;
     }
 
@@ -94,37 +95,64 @@ public class RadarActivity extends AppCompatActivity implements
         });
     }
 
-    private void setLineMenuClickListener(Menu menu) {
+    private void setLineMenuClickListener(final Menu menu) {
         menu.findItem(R.id.line).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
                 PenSetting penSetting = findGoogleView().getPenSetting();
+                deactivateDrawMenuItems(menu);
+                item.setIcon(R.drawable.line_icon_activated);
+                penSetting.setPenMode(PenMode.DRAWING);
                 penSetting.setDrawMode(DrawMode.LINE);
                 return true;
             }
         });
     }
 
-    private void setPolygonMenuClickListener(Menu menu) {
+
+    private void setPolygonMenuClickListener(final Menu menu) {
         menu.findItem(R.id.polygon).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
                 PenSetting penSetting = findGoogleView().getPenSetting();
+                deactivateDrawMenuItems(menu);
+                item.setIcon(R.drawable.polygon_icon_activated);
+                penSetting.setPenMode(PenMode.DRAWING);
                 penSetting.setDrawMode(DrawMode.POLYGON);
                 return true;
             }
         });
     }
 
-    private void setMarkerMenuClickListener(Menu menu) {
+    private void setMarkerMenuClickListener(final Menu menu) {
         menu.findItem(R.id.marker).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
                 PenSetting penSetting = findGoogleView().getPenSetting();
+                deactivateDrawMenuItems(menu);
+                item.setIcon(R.drawable.marker_icon_activated);
+                penSetting.setPenMode(PenMode.DRAWING);
                 penSetting.setDrawMode(DrawMode.MARKER);
                 return true;
             }
         });
+    }
+
+    private void setEditMenuClickListener(Menu menu) {
+        menu.findItem(R.id.edit).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                PenSetting penSetting = findGoogleView().getPenSetting();
+                penSetting.setPenMode(PenMode.EDIT);
+                return true;
+            }
+        });
+    }
+
+    private void deactivateDrawMenuItems(Menu menu){
+        menu.findItem(R.id.polygon).setIcon(R.drawable.polygon_icon);
+        menu.findItem(R.id.line).setIcon(R.drawable.line_icon);
+        menu.findItem(R.id.marker).setIcon(R.drawable.marker_icon);
     }
 
     @Override

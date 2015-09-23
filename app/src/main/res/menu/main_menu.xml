@@ -4,7 +4,11 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context=".RadarActivity">
 
-
+    <item
+        android:id="@+id/edit"
+        android:orderInCategory="100"
+        android:title="@string/edit"
+        app:showAsAction="always" />
     <item
         android:id="@+id/marker"
         android:orderInCategory="100"
@@ -21,7 +25,7 @@
         android:id="@+id/polygon"
         android:orderInCategory="100"
         android:title="@string/polygon"
-        android:icon="@drawable/polygon_icon"
+        android:icon="@drawable/polygon_icon_activated"
         app:showAsAction="always" />
 
     <item
