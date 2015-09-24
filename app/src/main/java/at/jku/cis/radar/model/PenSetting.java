@@ -4,7 +4,7 @@ import android.graphics.Color;
 
 public class PenSetting {
     private PenMode penMode = PenMode.DRAWING;
-    private DrawMode drawMode = DrawMode.LINE;
+    private DrawMode drawMode = DrawMode.POLYGON;
     private int color = Color.BLACK;
     private String paintingEvent;
 
