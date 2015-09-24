@@ -1,11 +1,9 @@
 package at.jku.cis.radar.fragment;
 
-
 import android.app.Fragment;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,8 +19,6 @@ import java.util.List;
 
 import at.jku.cis.radar.R;
 import at.jku.cis.radar.model.Event;
-import at.jku.cis.radar.rest.EventRestService;
-import at.jku.cis.radar.rest.RestServiceGenerator;
 import at.jku.cis.radar.service.EventDOMParser;
 
 public class SelectableTreeFragment extends Fragment implements ExpandableListView.OnChildClickListener {
@@ -41,13 +37,6 @@ public class SelectableTreeFragment extends Fragment implements ExpandableListVi
         expandableListView = (ExpandableListView) rootView.findViewById(R.id.lvExp);
         expandableListView.setOnChildClickListener(this);
         expandableListView.setAdapter(new EventExpandableListAdapter());
-        new AsyncTask<String, Void, List<Event>>() {
-
-            @Override
-            protected List<Event> doInBackground(String... params) {
-                return RestServiceGenerator.createService(EventRestService.class).getEvents();
-            }
-        }.execute();
         return rootView;
     }
 
