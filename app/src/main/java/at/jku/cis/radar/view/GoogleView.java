@@ -35,7 +35,6 @@ import at.jku.cis.radar.R;
 import at.jku.cis.radar.command.AddGeometryCommand;
 import at.jku.cis.radar.command.RemoveGeometryCommand;
 import at.jku.cis.radar.convert.GeometryTransformator;
-import at.jku.cis.radar.view.EventTreeFragment;
 import at.jku.cis.radar.model.ApplicationMode;
 import at.jku.cis.radar.model.DrawType;
 import at.jku.cis.radar.model.Event;
@@ -74,6 +73,10 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
     public ApplicationMode getApplicationMode() {
         return applicationMode;
+    }
+
+    public void setApplicationMode(ApplicationMode applicationMode) {
+        this.applicationMode = applicationMode;
     }
 
     public PenSetting getPenSetting() {
@@ -220,7 +223,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         }
         geoJsonGeometryBuilder.addCoordinate(latLng);
         if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
-            GeoJsonGeometry geoJsonGeometry = geoJsonGeometryBuilder.build(googleMap.getProjection());
+            GeoJsonGeometry geoJsonGeometry = geoJsonGeometryBuilder.build();
             GeoJsonFeature geoJsonFeature = new GeoJsonFeatureBuilder(geoJsonGeometry).setColor(penSetting.getColor()).build();
             new AddGeometryCommand(geoJsonFeature, getCorrespondingGeoJsonLayer()).doCommand();
         }
@@ -233,7 +236,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         geoJsonGeometryBuilder.addCoordinate(latLng);
         if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
             GeoJsonLayer geoJsonLayer = getCorrespondingGeoJsonLayer();
-            GeoJsonGeometry geoJsonGeometry = geoJsonGeometryBuilder.build(googleMap.getProjection());
+            GeoJsonGeometry geoJsonGeometry = geoJsonGeometryBuilder.build();
             GeoJsonIntersectionRemover geoJsonIntersectionRemover = new GeoJsonIntersectionRemover(geoJsonLayer.getFeatures(), geoJsonGeometry);
             geoJsonIntersectionRemover.removeIntersectedGeometry(googleMap.getProjection());
             new RemoveGeometryCommand(getCorrespondingGeoJsonLayer(), geoJsonIntersectionRemover.getAddList(), geoJsonIntersectionRemover.getRemoveList()).doCommand();
