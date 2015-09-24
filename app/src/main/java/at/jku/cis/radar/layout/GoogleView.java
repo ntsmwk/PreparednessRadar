@@ -16,7 +16,6 @@ import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.model.BitmapDescriptor;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
-import com.google.android.gms.maps.model.Marker;
 import com.google.maps.android.geojson.GeoJsonFeature;
 import com.google.maps.android.geojson.GeoJsonGeometry;
 import com.google.maps.android.geojson.GeoJsonLayer;
@@ -41,7 +40,6 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -116,7 +114,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
             LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
             if (motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) {
                 if (PenMode.EDIT == penSetting.getPenMode()) {
-                    //doEditing(motionEvent, currentLatLng);
+                    doEditing(motionEvent, currentLatLng);
                 } else if (PenMode.ERASING == penSetting.getPenMode()) {
                     doErasing(motionEvent, currentLatLng);
                 } else {
@@ -199,7 +197,6 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
         GeoJsonPointStyle pointStyle = new GeoJsonPointStyle();
         pointStyle.setIcon(pointIcon);
         pointStyle.setDraggable(true);
-        googleMap.setOnMarkerDragListener(new EditMarkerDragListener());
         return pointStyle;
     }
 
@@ -256,8 +253,8 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
         if (geometry instanceof GeoJsonLineString) {
             createNewLineStringFeature(feature);
         } else if (geometry instanceof GeoJsonPolygon) {
-            Polygon polygon = (Polygon)GeometryTransformator.transformToGeometry(geometry, googleMap.getProjection());
-            if(!polygon.isSimple()){
+            Polygon polygon = (Polygon) GeometryTransformator.transformToGeometry(geometry, googleMap.getProjection());
+            if (!polygon.isSimple()) {
                 feature = createComplexPolygon(polygon);
             }
             createNewSimplePolygonFeature(feature);
@@ -269,6 +266,15 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
 
     @NonNull
     private GeoJsonFeature createComplexPolygon(Polygon polygon) {
+        List<Polygon> polygons = repair(polygon);
+        MultiPolygon multiPolygon = new GeometryFactory().createMultiPolygon(polygons.toArray(new Polygon[polygons.size()]));
+        GeoJsonMultiPolygon geoJsonPolygon = (GeoJsonMultiPolygon) GeometryTransformator.transformToGeoJsonGeometry(multiPolygon, googleMap.getProjection());
+        GeoJsonFeature feature = new GeoJsonFeature(geoJsonPolygon, "id", null, null);
+        return feature;
+    }
+
+    @NonNull
+    private GeoJsonFeature createComplexMultiPolygon(MultiPolygon polygon) {
         List<Polygon> polygons = repair(polygon);
         MultiPolygon multiPolygon = new GeometryFactory().createMultiPolygon(polygons.toArray(new Polygon[polygons.size()]));
         GeoJsonMultiPolygon geoJsonPolygon = (GeoJsonMultiPolygon) GeometryTransformator.transformToGeoJsonGeometry(multiPolygon, googleMap.getProjection());
@@ -313,24 +319,28 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
             ArrayList<GeoJsonFeature> addList = new ArrayList<>();
             for (GeoJsonFeature feature : geoJsonLayer.getFeatures()) {
                 Geometry line = GeometryTransformator.transformToGeometry(feature.getGeometry(), projection);
+                GeoJsonFeature intersectionFeature = null;
                 if (line.intersects(eraser)) {
                     Geometry intersectionGeometry;
                     try {
                         intersectionGeometry = line.difference(eraser);
-                    }catch(TopologyException e){
+                    } catch (TopologyException e) {
                         continue;
                     }
-                    GeoJsonGeometry intersectedJsonGeometry = GeometryTransformator.transformToGeoJsonGeometry(intersectionGeometry, projection);
-                    GeoJsonFeature intersectionFeature = new GeoJsonFeature(intersectedJsonGeometry, "intersected geometry", null, null);
-                    GeoJsonPolygonStyle polygonStyle = new GeoJsonPolygonStyle();
-                    polygonStyle.setFillColor(feature.getPolygonStyle().getFillColor());
-                    intersectionFeature.setPolygonStyle(polygonStyle);
-                    addList.add(intersectionFeature);
+                    if (intersectionGeometry instanceof Polygon) {
+                        intersectionFeature = createComplexPolygon((Polygon) intersectionGeometry);
+                        createNewSimplePolygonFeature(intersectionFeature);
+                        addList.add(intersectionFeature);
+                    } else if (intersectionGeometry instanceof MultiPolygon) {
+                        intersectionFeature = createComplexMultiPolygon((MultiPolygon) intersectionGeometry);
+                        createNewSimplePolygonFeature(intersectionFeature);
+                        addList.add(intersectionFeature);
+                    }
                     removeList.add(feature);
                     continue;
                 }
             }
-            for(GeoJsonFeature feature : addList){
+            for (GeoJsonFeature feature : addList) {
                 geoJsonLayer.addFeature(feature);
             }
             for (GeoJsonFeature feature : removeList) {
@@ -339,7 +349,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
         }
     }
 
-    public List<Polygon> repair(Polygon polygon) {
+    private List<Polygon> repair(Polygon polygon) {
         TopologyValidationError err = new IsValidOp(polygon).getValidationError();
         if (err != null && TopologyValidationError.SELF_INTERSECTION == err.getErrorType()) {
             Geometry boundary = polygon.getBoundary();
@@ -348,13 +358,21 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
             polygonizer.add(boundary);
             List<Polygon> newPolygons = new ArrayList<>();
             for (Object newPolygon : polygonizer.getPolygons()) {
-                if(newPolygon != null) {
+                if (newPolygon != null) {
                     newPolygons.addAll(repair((Polygon) newPolygon));
                 }
             }
             return newPolygons;
         }
         return Arrays.asList(polygon);
+    }
+
+    private List<Polygon> repair(MultiPolygon multiPolygon) {
+        ArrayList<Polygon> polygons = new ArrayList<>();
+        for (int i = 0; i < multiPolygon.getNumGeometries(); i++) {
+            polygons.addAll(repair((Polygon) multiPolygon.getGeometryN(i)));
+        }
+        return polygons;
     }
 
     public void handleNewLocation(Location location) {
@@ -366,23 +384,5 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
 
     public PenSetting getPenSetting() {
         return penSetting;
-    }
-
-    private class EditMarkerDragListener implements GoogleMap.OnMarkerDragListener {
-        @Override
-        public void onMarkerDragStart(Marker marker) {
-            if (marker.getId().equals("editMarker")) {
-            }
-        }
-
-        @Override
-        public void onMarkerDrag(Marker marker) {
-
-        }
-
-        @Override
-        public void onMarkerDragEnd(Marker marker) {
-
-        }
     }
 }
