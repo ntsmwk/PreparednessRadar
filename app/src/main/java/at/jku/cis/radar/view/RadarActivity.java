@@ -17,8 +17,6 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.MapFragment;
 
 import at.jku.cis.radar.R;
-import at.jku.cis.radar.fragment.SelectableTreeFragment;
-import at.jku.cis.radar.layout.GoogleView;
 import at.jku.cis.radar.model.DrawType;
 import at.jku.cis.radar.model.PenMode;
 import at.jku.cis.radar.model.PenSetting;
@@ -62,9 +60,9 @@ public class RadarActivity extends AppCompatActivity implements
     }
 
     private void initializeSideBar() {
-        SelectableTreeFragment selectableTreeFragment = new SelectableTreeFragment();
-        selectableTreeFragment.addEventClickListener(findGoogleView());
-        getFragmentManager().beginTransaction().add(R.id.SidebarLayout, selectableTreeFragment).commit();
+        EventTreeFragment eventTreeFragment = new EventTreeFragment();
+        eventTreeFragment.addEventClickListener(findGoogleView());
+        getFragmentManager().beginTransaction().add(R.id.SidebarLayout, eventTreeFragment).commit();
     }
 
     private void initializeGoogleApiClient() {

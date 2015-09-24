@@ -1,4 +1,4 @@
-package at.jku.cis.radar.fragment;
+package at.jku.cis.radar.view;
 
 import android.app.Fragment;
 import android.graphics.Color;
@@ -21,7 +21,7 @@ import at.jku.cis.radar.R;
 import at.jku.cis.radar.model.Event;
 import at.jku.cis.radar.service.EventDOMParser;
 
-public class SelectableTreeFragment extends Fragment implements ExpandableListView.OnChildClickListener {
+public class EventTreeFragment extends Fragment implements ExpandableListView.OnChildClickListener {
 
     private static final String EVENT_TREE_XML = "eventTree.xml";
 
