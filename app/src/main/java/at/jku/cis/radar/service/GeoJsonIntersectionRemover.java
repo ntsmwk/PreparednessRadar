@@ -6,8 +6,10 @@ import com.google.maps.android.geojson.GeoJsonGeometry;
 import com.google.maps.android.geojson.GeoJsonMultiPolygon;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
+import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.geom.Polygon;
+import com.vividsolutions.jts.geom.Polygonal;
 import com.vividsolutions.jts.geom.TopologyException;
 
 import java.util.ArrayList;
@@ -29,10 +31,10 @@ public class GeoJsonIntersectionRemover {
     }
 
     public void removeIntersectedGeometry(Projection projection) {
-        Geometry eraser = GeometryTransformator.transformToGeometry(geoJsonEraseGeometry, projection);
+        Geometry eraser = GeometryTransformator.transformToGeometry(geoJsonEraseGeometry);
         GeoJsonFeatureBuilder geoJsonFeatureBuilder;
         for (GeoJsonFeature feature : features) {
-            Geometry line = GeometryTransformator.transformToGeometry(feature.getGeometry(), projection);
+            Geometry line = GeometryTransformator.transformToGeometry(feature.getGeometry());
             GeoJsonGeometry intersectionGeoJsonGeometry = null;
             if (line.intersects(eraser)) {
                 Geometry intersectionGeometry;
@@ -43,11 +45,11 @@ public class GeoJsonIntersectionRemover {
                 }
                 if (intersectionGeometry instanceof Polygon) {
                     intersectionGeoJsonGeometry = createComplexPolygon((Polygon) intersectionGeometry, projection);
-                    geoJsonFeatureBuilder = new GeoJsonFeatureBuilder(intersectionGeoJsonGeometry);
-                    geoJsonFeatureBuilder.setColor(feature.getPolygonStyle().getFillColor());
-                    addList.add(geoJsonFeatureBuilder.build());
-                } else if (intersectionGeometry instanceof MultiPolygon) {
-                    intersectionGeoJsonGeometry = createComplexMultiPolygon((MultiPolygon) intersectionGeometry, projection);
+
+                } else if(intersectionGeometry instanceof  MultiPolygon){
+                    intersectionGeoJsonGeometry = createComplexPolygon((MultiPolygon) intersectionGeometry, projection);
+                }
+                if (intersectionGeometry instanceof Polygonal && !intersectionGeometry.isEmpty()){
                     geoJsonFeatureBuilder = new GeoJsonFeatureBuilder(intersectionGeoJsonGeometry);
                     geoJsonFeatureBuilder.setColor(feature.getPolygonStyle().getFillColor());
                     addList.add(geoJsonFeatureBuilder.build());
@@ -58,17 +60,15 @@ public class GeoJsonIntersectionRemover {
         }
     }
 
-    private GeoJsonMultiPolygon createComplexPolygon(Polygon polygon, Projection projection) {
-        List<Polygon> polygons = JTSUtils.repair(polygon);
+    private GeoJsonMultiPolygon createComplexPolygon(Polygonal polygon, Projection projection) {
+        List<Polygon> polygons = null;
+        if(polygon instanceof Polygon) {
+            polygons = JTSUtils.repair((Polygon)polygon);
+        } else{
+            polygons = JTSUtils.repair((MultiPolygon)polygon);
+        }
         MultiPolygon multiPolygon = new GeometryFactory().createMultiPolygon(polygons.toArray(new Polygon[polygons.size()]));
-        GeoJsonMultiPolygon geoJsonPolygon = (GeoJsonMultiPolygon) GeometryTransformator.transformToGeoJsonGeometry(multiPolygon, projection);
-        return geoJsonPolygon;
-    }
-
-    private GeoJsonMultiPolygon createComplexMultiPolygon(MultiPolygon polygon, Projection projection) {
-        List<Polygon> polygons = JTSUtils.repair(polygon);
-        MultiPolygon multiPolygon = new GeometryFactory().createMultiPolygon(polygons.toArray(new Polygon[polygons.size()]));
-        GeoJsonMultiPolygon geoJsonPolygon = (GeoJsonMultiPolygon) GeometryTransformator.transformToGeoJsonGeometry(multiPolygon, projection);
+        GeoJsonMultiPolygon geoJsonPolygon = (GeoJsonMultiPolygon) GeometryTransformator.transformToGeoJsonGeometry(multiPolygon);
         return geoJsonPolygon;
     }
 

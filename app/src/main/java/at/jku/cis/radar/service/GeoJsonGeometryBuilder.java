@@ -42,7 +42,7 @@ public class GeoJsonGeometryBuilder {
 
     private GeoJsonGeometry createGeoJsonPolygon(Projection projection) {
         GeoJsonPolygon geoJsonPolygon = new GeoJsonPolygon(createListOfCoordinates(coordinates));
-        Polygon polygon = (Polygon) GeometryTransformator.transformToGeometry(geoJsonPolygon, projection);
+        Polygon polygon = (Polygon) GeometryTransformator.transformToGeometry(geoJsonPolygon);
         if (polygon.isSimple()) {
             return geoJsonPolygon;
         }
@@ -58,7 +58,7 @@ public class GeoJsonGeometryBuilder {
     private GeoJsonMultiPolygon createComplexPolygon(Polygon polygon, Projection projection) {
         List<Polygon> polygons = JTSUtils.repair(polygon);
         MultiPolygon multiPolygon = new GeometryFactory().createMultiPolygon(polygons.toArray(new Polygon[polygons.size()]));
-        GeoJsonMultiPolygon geoJsonPolygon = (GeoJsonMultiPolygon) GeometryTransformator.transformToGeoJsonGeometry(multiPolygon, projection);
+        GeoJsonMultiPolygon geoJsonPolygon = (GeoJsonMultiPolygon) GeometryTransformator.transformToGeoJsonGeometry(multiPolygon);
         return geoJsonPolygon;
     }
 }
