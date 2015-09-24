@@ -1,12 +1,12 @@
-package at.jku.cis.radar.service;
+package at.jku.cis.radar.rest;
 
 import java.util.List;
 
 import at.jku.cis.radar.model.Event;
 import retrofit.http.GET;
 
-public interface RestService {
+public interface EventRestService {
 
     @GET("/events")
-    List<Event> getEvents();
+    public List<Event> getEvents();
 }

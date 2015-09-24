@@ -1,20 +1,35 @@
 package at.jku.cis.radar.model;
 
+import org.joda.time.Period;
+
 import java.util.List;
 
 public class Event {
+    private long id;
     private String name;
     private int color;
+    private Period validationPeriod;
     private boolean selected;
     private boolean visible = true;
     private List<Event> events;
     private List<Action> actions;
+
+    public Event() {
+    }
 
     public Event(String name, int color, List<Event> events, List<Action> actions) {
         this.name = name;
         this.color = color;
         this.events = events;
         this.actions = actions;
+    }
+
+    public long getId() {
+        return id;
+    }
+
+    public void setId(long id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -31,6 +46,14 @@ public class Event {
 
     public void setColor(int color) {
         this.color = color;
+    }
+
+    public Period getValidationPeriod() {
+        return validationPeriod;
+    }
+
+    public void setValidationPeriod(Period validationPeriod) {
+        this.validationPeriod = validationPeriod;
     }
 
     public boolean isVisible() {
