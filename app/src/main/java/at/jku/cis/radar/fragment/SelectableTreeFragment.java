@@ -1,6 +1,5 @@
 package at.jku.cis.radar.fragment;
 
-
 import android.app.Fragment;
 import android.graphics.Color;
 import android.graphics.Typeface;
@@ -34,7 +33,6 @@ public class SelectableTreeFragment extends Fragment implements ExpandableListVi
     @Override
     public View onCreateView(final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_selectable_nodes, container, false);
-        //events = RestServiceGenerator.createService(RestService.class).getEvents();
         events = parseEvents(inflater);
         expandableListView = (ExpandableListView) rootView.findViewById(R.id.lvExp);
         expandableListView.setOnChildClickListener(this);
