@@ -1,4 +1,4 @@
-package at.jku.cis.radar.service;
+package at.jku.cis.radar.rest;
 
 import retrofit.RestAdapter;
 import retrofit.android.AndroidApacheClient;
