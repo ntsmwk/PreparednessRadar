@@ -1,4 +1,4 @@
-package at.jku.cis.radar.layout;
+package at.jku.cis.radar.view;
 
 import android.content.Context;
 import android.graphics.Point;
@@ -35,7 +35,7 @@ import at.jku.cis.radar.R;
 import at.jku.cis.radar.command.AddGeometryCommand;
 import at.jku.cis.radar.command.RemoveGeometryCommand;
 import at.jku.cis.radar.convert.GeometryTransformator;
-import at.jku.cis.radar.fragment.SelectableTreeFragment;
+import at.jku.cis.radar.view.EventTreeFragment;
 import at.jku.cis.radar.model.ApplicationMode;
 import at.jku.cis.radar.model.DrawType;
 import at.jku.cis.radar.model.Event;
@@ -46,7 +46,7 @@ import at.jku.cis.radar.service.GeoJsonGeometryBuilder;
 import at.jku.cis.radar.service.GeoJsonIntersectionRemover;
 
 
-public class GoogleView extends MapView implements OnMapReadyCallback, SelectableTreeFragment.EventClickListener {
+public class GoogleView extends MapView implements OnMapReadyCallback, EventTreeFragment.EventClickListener {
     private final int POLYGON_EXTERIOR_RING_INDEX = 0;
 
     private GoogleMap googleMap;
