@@ -15,7 +15,8 @@ public class JTSUtils {
 
     public static List<Polygon> repair(Polygon polygon) {
         TopologyValidationError topologyValidationError = new IsValidOp(polygon).getValidationError();
-        if (topologyValidationError != null && TopologyValidationError.SELF_INTERSECTION == topologyValidationError.getErrorType()) {
+        if (isSelfIntersectionErrorTyp(topologyValidationError)) {
+            System.out.println(topologyValidationError);
             Geometry boundary = polygon.getBoundary();
             boundary = boundary.union(boundary);
             Polygonizer polygonizer = new Polygonizer();
@@ -31,6 +32,12 @@ public class JTSUtils {
         return Arrays.asList(polygon);
     }
 
+    private static boolean isSelfIntersectionErrorTyp(TopologyValidationError topologyValidationError) {
+        return topologyValidationError != null && (TopologyValidationError.SELF_INTERSECTION == topologyValidationError.getErrorType() ||
+                topologyValidationError.getErrorType() == TopologyValidationError.RING_SELF_INTERSECTION ||
+                topologyValidationError.getErrorType() == TopologyValidationError.DISCONNECTED_INTERIOR);
+    }
+
     public static List<Polygon> repair(MultiPolygon multiPolygon) {
         ArrayList<Polygon> polygons = new ArrayList<>();
         for (int i = 0; i < multiPolygon.getNumGeometries(); i++) {
@@ -38,5 +45,4 @@ public class JTSUtils {
         }
         return polygons;
     }
-
 }

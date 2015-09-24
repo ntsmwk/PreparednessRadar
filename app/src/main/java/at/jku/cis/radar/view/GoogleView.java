@@ -135,12 +135,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
                 doPainting(motionEvent, currentLatLng);
             }
         } else {
-            if (PenMode.ERASING == penSetting.getPenMode()) {
-                doErasing(motionEvent, currentLatLng);
-            } else {
-                doPainting(motionEvent, currentLatLng);
-            }
-            // doEditing(motionEvent, currentLatLng);
+            doEditing(motionEvent, currentLatLng);
         }
     }
 
@@ -196,7 +191,6 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         GeoJsonFeature editMarkerFeature = getEditMarkerFeature(pointStyle, latLng);
         activeEditMarkerMap.put(layer, editMarkerFeature);
         layer.addFeature(editMarkerFeature);
-
     }
 
     @NonNull
