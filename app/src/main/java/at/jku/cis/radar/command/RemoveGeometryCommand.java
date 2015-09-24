@@ -17,11 +17,11 @@ public class RemoveGeometryCommand extends Command{
 
     @Override
     public void doCommand() {
-        for(GeoJsonFeature feature : addList){
-            geoJsonLayer.addFeature(feature);
-        }
         for(GeoJsonFeature feature : removeList){
             geoJsonLayer.removeFeature(feature);
+        }
+        for (GeoJsonFeature feature : addList) {
+            geoJsonLayer.addFeature(feature);
         }
     }
 

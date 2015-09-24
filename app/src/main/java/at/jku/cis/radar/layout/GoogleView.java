@@ -58,8 +58,6 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
     private GeoJsonGeometryBuilder geoJsonGeometryBuilder;
 
     private Map<String, GeoJsonLayer> geoJsonLayers = new HashMap<>();
-    private GeoJsonGeometry geoJsonGeometry = null;
-    private GeoJsonPolygon eraserPolygon = null;
     private HashMap<GeoJsonLayer, GeoJsonFeature> activeEditMarkerMap = new HashMap<>();
 
     public GoogleView(Context context, AttributeSet attrs) {
@@ -152,14 +150,14 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
 
     private void setEditPointsOnMap(GeoJsonPoint editPoint) {
         Projection projection = googleMap.getProjection();
-        Geometry editGeometry = GeometryTransformator.transformToGeometry(editPoint, projection);
+        Geometry editGeometry = GeometryTransformator.transformToGeometry(editPoint);
         List<GeoJsonFeature> featureList = new ArrayList<>();
         for (GeoJsonLayer geoJsonLayer : this.geoJsonLayers.values()) {
             if (!geoJsonLayer.isLayerOnMap()) {
                 continue;
             }
             for (GeoJsonFeature feature : geoJsonLayer.getFeatures()) {
-                Geometry geometry = GeometryTransformator.transformToGeometry(feature.getGeometry(), projection);
+                Geometry geometry = GeometryTransformator.transformToGeometry(feature.getGeometry());
                 if (geometry.intersects(editGeometry)) {
                     featureList.add(feature);
                     continue;
