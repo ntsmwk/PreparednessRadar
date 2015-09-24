@@ -17,6 +17,7 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.MapFragment;
 
 import at.jku.cis.radar.R;
+import at.jku.cis.radar.model.ApplicationMode;
 import at.jku.cis.radar.model.DrawType;
 import at.jku.cis.radar.model.PenMode;
 import at.jku.cis.radar.model.PenSetting;
@@ -140,8 +141,12 @@ public class RadarActivity extends AppCompatActivity implements
         menu.findItem(R.id.edit).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
-                // PenSetting penSetting = findGoogleView().getPenSetting();
-                // penSetting.setPenMode(PenMode.EDIT);
+                GoogleView googleView = findGoogleView();
+                if (ApplicationMode.PAINTING == googleView.getApplicationMode()) {
+                    googleView.setApplicationMode(ApplicationMode.EDITING);
+                } else {
+                    googleView.setApplicationMode(ApplicationMode.PAINTING);
+                }
                 return true;
             }
         });

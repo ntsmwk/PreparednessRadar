@@ -1,6 +1,5 @@
 package at.jku.cis.radar.service;
 
-import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.maps.android.geojson.GeoJsonGeometry;
 import com.google.maps.android.geojson.GeoJsonLineString;
@@ -30,23 +29,23 @@ public class GeoJsonGeometryBuilder {
         return this;
     }
 
-    public GeoJsonGeometry build(Projection projection) {
+    public GeoJsonGeometry build() {
         if (DrawType.LINE == drawType) {
             return new GeoJsonLineString(coordinates);
         } else if (DrawType.POLYGON == drawType) {
-            return createGeoJsonPolygon(projection);
+            return createGeoJsonPolygon();
         } else {
             return new GeoJsonPoint(coordinates.get(coordinates.size() - 1));
         }
     }
 
-    private GeoJsonGeometry createGeoJsonPolygon(Projection projection) {
+    private GeoJsonGeometry createGeoJsonPolygon() {
         GeoJsonPolygon geoJsonPolygon = new GeoJsonPolygon(createListOfCoordinates(coordinates));
         Polygon polygon = (Polygon) GeometryTransformator.transformToGeometry(geoJsonPolygon);
         if (polygon.isSimple()) {
             return geoJsonPolygon;
         }
-        return createComplexPolygon(polygon, projection);
+        return createComplexPolygon(polygon);
     }
 
     private List<List<LatLng>> createListOfCoordinates(List<LatLng> coordinates) {
@@ -55,7 +54,7 @@ public class GeoJsonGeometryBuilder {
         return listOfCoordinates;
     }
 
-    private GeoJsonMultiPolygon createComplexPolygon(Polygon polygon, Projection projection) {
+    private GeoJsonMultiPolygon createComplexPolygon(Polygon polygon) {
         List<Polygon> polygons = JTSUtils.repair(polygon);
         MultiPolygon multiPolygon = new GeometryFactory().createMultiPolygon(polygons.toArray(new Polygon[polygons.size()]));
         GeoJsonMultiPolygon geoJsonPolygon = (GeoJsonMultiPolygon) GeometryTransformator.transformToGeoJsonGeometry(multiPolygon);
