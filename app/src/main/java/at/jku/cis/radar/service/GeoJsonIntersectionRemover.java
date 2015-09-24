@@ -30,24 +30,24 @@ public class GeoJsonIntersectionRemover {
 
     }
 
-    public void removeIntersectedGeometry(Projection projection) {
+    public void removeIntersectedGeometry() {
         Geometry eraser = GeometryTransformator.transformToGeometry(geoJsonEraseGeometry);
         GeoJsonFeatureBuilder geoJsonFeatureBuilder;
         for (GeoJsonFeature feature : features) {
-            Geometry line = GeometryTransformator.transformToGeometry(feature.getGeometry());
+            Geometry geometry = GeometryTransformator.transformToGeometry(feature.getGeometry());
             GeoJsonGeometry intersectionGeoJsonGeometry = null;
-            if (line.intersects(eraser)) {
+            if (geometry.intersects(eraser)) {
                 Geometry intersectionGeometry;
                 try {
-                    intersectionGeometry = line.difference(eraser);
+                    intersectionGeometry = geometry.difference(eraser);
                 } catch (TopologyException e) {
                     continue;
                 }
                 if (intersectionGeometry instanceof Polygon) {
-                    intersectionGeoJsonGeometry = createComplexPolygon((Polygon) intersectionGeometry, projection);
+                    intersectionGeoJsonGeometry = createComplexPolygon((Polygon) intersectionGeometry);
 
                 } else if(intersectionGeometry instanceof  MultiPolygon){
-                    intersectionGeoJsonGeometry = createComplexPolygon((MultiPolygon) intersectionGeometry, projection);
+                    intersectionGeoJsonGeometry = createComplexPolygon((MultiPolygon) intersectionGeometry);
                 }
                 if (intersectionGeometry instanceof Polygonal && !intersectionGeometry.isEmpty()){
                     geoJsonFeatureBuilder = new GeoJsonFeatureBuilder(intersectionGeoJsonGeometry);
@@ -60,8 +60,8 @@ public class GeoJsonIntersectionRemover {
         }
     }
 
-    private GeoJsonMultiPolygon createComplexPolygon(Polygonal polygon, Projection projection) {
-        List<Polygon> polygons = null;
+    private GeoJsonMultiPolygon createComplexPolygon(Polygonal polygon) {
+        List<Polygon> polygons;
         if(polygon instanceof Polygon) {
             polygons = JTSUtils.repair((Polygon)polygon);
         } else{

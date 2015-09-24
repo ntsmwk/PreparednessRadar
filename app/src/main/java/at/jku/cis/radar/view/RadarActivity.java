@@ -102,6 +102,7 @@ public class RadarActivity extends AppCompatActivity implements
                 deactivateDrawMenuItems(menu);
                 item.setIcon(R.drawable.line_icon_activated);
                 penSetting.setPenMode(PenMode.DRAWING);
+                menu.findItem(R.id.erase).setIcon(R.drawable.pen_icon);
                 penSetting.setDrawType(DrawType.LINE);
                 return true;
             }
@@ -116,6 +117,7 @@ public class RadarActivity extends AppCompatActivity implements
                 PenSetting penSetting = findGoogleView().getPenSetting();
                 deactivateDrawMenuItems(menu);
                 item.setIcon(R.drawable.polygon_icon_activated);
+                menu.findItem(R.id.erase).setIcon(R.drawable.pen_icon);
                 penSetting.setPenMode(PenMode.DRAWING);
                 penSetting.setDrawType(DrawType.POLYGON);
                 return true;
@@ -130,6 +132,7 @@ public class RadarActivity extends AppCompatActivity implements
                 PenSetting penSetting = findGoogleView().getPenSetting();
                 deactivateDrawMenuItems(menu);
                 item.setIcon(R.drawable.marker_icon_activated);
+                menu.findItem(R.id.erase).setIcon(R.drawable.pen_icon);
                 penSetting.setPenMode(PenMode.DRAWING);
                 penSetting.setDrawType(DrawType.MARKER);
                 return true;

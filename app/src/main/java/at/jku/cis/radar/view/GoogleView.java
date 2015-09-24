@@ -152,7 +152,6 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     }
 
     private void setEditPointsOnMap(GeoJsonPoint editPoint) {
-        Projection projection = googleMap.getProjection();
         Geometry editGeometry = GeometryTransformator.transformToGeometry(editPoint);
         List<GeoJsonFeature> featureList = new ArrayList<>();
         for (GeoJsonLayer geoJsonLayer : this.geoJsonLayers.values()) {
@@ -231,14 +230,14 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
     private void doErasing(@NonNull MotionEvent motionEvent, LatLng latLng) {
         if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-           geoJsonGeometryBuilder = new GeoJsonGeometryBuilder(DrawType.POLYGON);
+           geoJsonGeometryBuilder = new GeoJsonGeometryBuilder(DrawType.POLYGON).simplify(false);
         }
         geoJsonGeometryBuilder.addCoordinate(latLng);
         if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
             GeoJsonLayer geoJsonLayer = getCorrespondingGeoJsonLayer();
             GeoJsonGeometry geoJsonGeometry = geoJsonGeometryBuilder.build();
             GeoJsonIntersectionRemover geoJsonIntersectionRemover = new GeoJsonIntersectionRemover(geoJsonLayer.getFeatures(), geoJsonGeometry);
-            geoJsonIntersectionRemover.removeIntersectedGeometry(googleMap.getProjection());
+            geoJsonIntersectionRemover.removeIntersectedGeometry();
             new RemoveGeometryCommand(getCorrespondingGeoJsonLayer(), geoJsonIntersectionRemover.getAddList(), geoJsonIntersectionRemover.getRemoveList()).doCommand();
         }
     }

@@ -19,6 +19,7 @@ import at.jku.cis.radar.model.DrawType;
 public class GeoJsonGeometryBuilder {
     private DrawType drawType;
     private List<LatLng> coordinates = new ArrayList<>();
+    private boolean simplify = true;
 
     public GeoJsonGeometryBuilder(DrawType drawType) {
         this.drawType = drawType;
@@ -26,6 +27,11 @@ public class GeoJsonGeometryBuilder {
 
     public GeoJsonGeometryBuilder addCoordinate(LatLng coordinate) {
         coordinates.add(coordinate);
+        return this;
+    }
+
+    public GeoJsonGeometryBuilder simplify(boolean simplify){
+        this.simplify = simplify;
         return this;
     }
 
@@ -42,7 +48,7 @@ public class GeoJsonGeometryBuilder {
     private GeoJsonGeometry createGeoJsonPolygon() {
         GeoJsonPolygon geoJsonPolygon = new GeoJsonPolygon(createListOfCoordinates(coordinates));
         Polygon polygon = (Polygon) GeometryTransformator.transformToGeometry(geoJsonPolygon);
-        if (polygon.isSimple()) {
+        if (polygon.isSimple() || !simplify) {
             return geoJsonPolygon;
         }
         return createComplexPolygon(polygon);
