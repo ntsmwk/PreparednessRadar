@@ -16,21 +16,18 @@ import java.util.List;
 import at.jku.cis.radar.convert.GeometryTransformator;
 
 public class GeoJsonIntersectionRemover {
-
-    Iterable<GeoJsonFeature> features;
-    GeoJsonGeometry geoJsonEraseGeometry;
-    List<GeoJsonFeature> addList = new ArrayList<>();
-    List<GeoJsonFeature> removeList = new ArrayList<>();
+    private Iterable<GeoJsonFeature> features;
+    private GeoJsonGeometry geoJsonEraseGeometry;
+    private List<GeoJsonFeature> addList = new ArrayList<>();
+    private List<GeoJsonFeature> removeList = new ArrayList<>();
 
     public GeoJsonIntersectionRemover(Iterable<GeoJsonFeature> features, GeoJsonGeometry geoJsonEraseGeometry) {
         this.features = features;
         this.geoJsonEraseGeometry = geoJsonEraseGeometry;
-
     }
 
     public void removeIntersectedGeometry(Projection projection) {
         Geometry eraser = GeometryTransformator.transformToGeometry(geoJsonEraseGeometry, projection);
-        GeoJsonFeatureBuilder geoJsonFeatureBuilder;
         for (GeoJsonFeature feature : features) {
             Geometry line = GeometryTransformator.transformToGeometry(feature.getGeometry(), projection);
             GeoJsonGeometry intersectionGeoJsonGeometry = null;
@@ -43,17 +40,16 @@ public class GeoJsonIntersectionRemover {
                 }
                 if (intersectionGeometry instanceof Polygon) {
                     intersectionGeoJsonGeometry = createComplexPolygon((Polygon) intersectionGeometry, projection);
-                    geoJsonFeatureBuilder = new GeoJsonFeatureBuilder(intersectionGeoJsonGeometry);
+                    GeoJsonFeatureBuilder geoJsonFeatureBuilder = new GeoJsonFeatureBuilder(intersectionGeoJsonGeometry);
                     geoJsonFeatureBuilder.setColor(feature.getPolygonStyle().getFillColor());
                     addList.add(geoJsonFeatureBuilder.build());
                 } else if (intersectionGeometry instanceof MultiPolygon) {
                     intersectionGeoJsonGeometry = createComplexMultiPolygon((MultiPolygon) intersectionGeometry, projection);
-                    geoJsonFeatureBuilder = new GeoJsonFeatureBuilder(intersectionGeoJsonGeometry);
+                    GeoJsonFeatureBuilder geoJsonFeatureBuilder = new GeoJsonFeatureBuilder(intersectionGeoJsonGeometry);
                     geoJsonFeatureBuilder.setColor(feature.getPolygonStyle().getFillColor());
                     addList.add(geoJsonFeatureBuilder.build());
                 }
                 removeList.add(feature);
-                continue;
             }
         }
     }
