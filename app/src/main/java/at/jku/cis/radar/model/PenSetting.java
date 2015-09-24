@@ -4,7 +4,7 @@ import android.graphics.Color;
 
 public class PenSetting {
     private PenMode penMode = PenMode.DRAWING;
-    private DrawMode drawMode = DrawMode.POLYGON;
+    private DrawType drawType = DrawType.POLYGON;
     private int color = Color.BLACK;
     private String paintingEvent;
 
@@ -32,11 +32,11 @@ public class PenSetting {
         this.paintingEvent = paintingEvent;
     }
 
-    public DrawMode getDrawMode() {
-        return drawMode;
+    public DrawType getDrawType() {
+        return drawType;
     }
 
-    public void setDrawMode(DrawMode drawMode) {
-        this.drawMode = drawMode;
+    public void setDrawType(DrawType drawType) {
+        this.drawType = drawType;
     }
 }

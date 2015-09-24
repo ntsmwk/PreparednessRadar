@@ -19,7 +19,7 @@ import com.google.android.gms.maps.MapFragment;
 import at.jku.cis.radar.R;
 import at.jku.cis.radar.fragment.SelectableTreeFragment;
 import at.jku.cis.radar.layout.GoogleView;
-import at.jku.cis.radar.model.DrawMode;
+import at.jku.cis.radar.model.DrawType;
 import at.jku.cis.radar.model.PenMode;
 import at.jku.cis.radar.model.PenSetting;
 
@@ -103,7 +103,7 @@ public class RadarActivity extends AppCompatActivity implements
                 deactivateDrawMenuItems(menu);
                 item.setIcon(R.drawable.line_icon_activated);
                 penSetting.setPenMode(PenMode.DRAWING);
-                penSetting.setDrawMode(DrawMode.LINE);
+                penSetting.setDrawType(DrawType.LINE);
                 return true;
             }
         });
@@ -118,7 +118,7 @@ public class RadarActivity extends AppCompatActivity implements
                 deactivateDrawMenuItems(menu);
                 item.setIcon(R.drawable.polygon_icon_activated);
                 penSetting.setPenMode(PenMode.DRAWING);
-                penSetting.setDrawMode(DrawMode.POLYGON);
+                penSetting.setDrawType(DrawType.POLYGON);
                 return true;
             }
         });
@@ -132,7 +132,7 @@ public class RadarActivity extends AppCompatActivity implements
                 deactivateDrawMenuItems(menu);
                 item.setIcon(R.drawable.marker_icon_activated);
                 penSetting.setPenMode(PenMode.DRAWING);
-                penSetting.setDrawMode(DrawMode.MARKER);
+                penSetting.setDrawType(DrawType.MARKER);
                 return true;
             }
         });
