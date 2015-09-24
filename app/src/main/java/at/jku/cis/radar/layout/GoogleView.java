@@ -29,7 +29,6 @@ import com.google.maps.android.geojson.GeoJsonPolygon;
 import com.google.maps.android.geojson.GeoJsonPolygonStyle;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
-import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.geom.Polygon;
 import com.vividsolutions.jts.geom.TopologyException;
@@ -41,7 +40,6 @@ import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +48,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import at.jku.cis.radar.R;
 import at.jku.cis.radar.convert.GeometryTransformator;
 import at.jku.cis.radar.fragment.SelectableTreeFragment;
+import at.jku.cis.radar.model.ApplicationMode;
 import at.jku.cis.radar.model.DrawMode;
 import at.jku.cis.radar.model.Event;
 import at.jku.cis.radar.model.PenMode;
@@ -60,11 +59,14 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
     private final int POLYGON_EXTERIOR_RING_INDEX = 0;
 
     private GoogleMap googleMap;
+
+    private boolean paintingEnabled = false;
     private PenSetting penSetting = new PenSetting();
+    private ApplicationMode applicationMode = ApplicationMode.PAINTING;
+
     private Map<String, GeoJsonLayer> geoJsonLayers = new HashMap<>();
     private GeoJsonGeometry geoJsonGeometry = null;
     private GeoJsonPolygon eraserPolygon = null;
-    private boolean paintingEnabled = true;
     private HashMap<GeoJsonLayer, GeoJsonFeature> activeEditMarkerMap = new HashMap<>();
 
     public GoogleView(Context context, AttributeSet attrs) {
@@ -78,6 +80,16 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
         this.googleMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
         this.googleMap.getUiSettings().setMyLocationButtonEnabled(true);
     }
+
+    public ApplicationMode getApplicationMode() {
+        return applicationMode;
+    }
+
+    public PenSetting getPenSetting() {
+        return penSetting;
+    }
+
+
 
     @Override
     public void handleEventVisibleChanged(Event event) {
@@ -112,21 +124,32 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
     @Override
     public boolean dispatchTouchEvent(@NonNull MotionEvent motionEvent) {
         if (googleMap != null && penSetting.getPaintingEvent() != null && paintingEnabled) {
-            Point currentPosition = new Point((int) motionEvent.getX(), (int) motionEvent.getY());
-            LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
             if (motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) {
-                if (PenMode.EDIT == penSetting.getPenMode()) {
-                    //doEditing(motionEvent, currentLatLng);
-                } else if (PenMode.ERASING == penSetting.getPenMode()) {
-                    doErasing(motionEvent, currentLatLng);
-                } else {
-                    doPainting(motionEvent, currentLatLng);
-                }
+                dispatchStylusTouchEvent(motionEvent);
             } else {
                 super.dispatchTouchEvent(motionEvent);
             }
         }
         return true;
+    }
+
+    private void dispatchStylusTouchEvent(@NonNull MotionEvent motionEvent) {
+        Point currentPosition = new Point((int) motionEvent.getX(), (int) motionEvent.getY());
+        LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
+        if (ApplicationMode.PAINTING == applicationMode) {
+            if (PenMode.ERASING == penSetting.getPenMode()) {
+                doErasing(motionEvent, currentLatLng);
+            } else {
+                doPainting(motionEvent, currentLatLng);
+            }
+        } else {
+            if (PenMode.ERASING == penSetting.getPenMode()) {
+                doErasing(motionEvent, currentLatLng);
+            } else {
+                doPainting(motionEvent, currentLatLng);
+            }
+            // doEditing(motionEvent, currentLatLng);
+        }
     }
 
     private void doEditing(@NonNull MotionEvent motionEvent, LatLng currentLatLng) {
@@ -362,10 +385,6 @@ public class GoogleView extends MapView implements OnMapReadyCallback, Selectabl
         double currentLongitude = location.getLongitude();
         LatLng latLng = new LatLng(currentLatitude, currentLongitude);
         googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
-    }
-
-    public PenSetting getPenSetting() {
-        return penSetting;
     }
 
     private class EditMarkerDragListener implements GoogleMap.OnMarkerDragListener {

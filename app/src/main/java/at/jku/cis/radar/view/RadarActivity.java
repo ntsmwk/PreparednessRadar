@@ -142,8 +142,8 @@ public class RadarActivity extends AppCompatActivity implements
         menu.findItem(R.id.edit).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
-                PenSetting penSetting = findGoogleView().getPenSetting();
-                penSetting.setPenMode(PenMode.EDIT);
+                // PenSetting penSetting = findGoogleView().getPenSetting();
+                // penSetting.setPenMode(PenMode.EDIT);
                 return true;
             }
         });
@@ -153,6 +153,14 @@ public class RadarActivity extends AppCompatActivity implements
         menu.findItem(R.id.polygon).setIcon(R.drawable.polygon_icon);
         menu.findItem(R.id.line).setIcon(R.drawable.line_icon);
         menu.findItem(R.id.marker).setIcon(R.drawable.marker_icon);
+    }
+
+    private GoogleApiClient buildGoogleApiClient() {
+        GoogleApiClient.Builder googleApiClientBuilder = new GoogleApiClient.Builder(this);
+        googleApiClientBuilder.addConnectionCallbacks(this);
+        googleApiClientBuilder.addOnConnectionFailedListener(this);
+        googleApiClientBuilder.addApi(LocationServices.API);
+        return googleApiClientBuilder.build();
     }
 
     @Override
@@ -167,14 +175,6 @@ public class RadarActivity extends AppCompatActivity implements
         } else {
             findGoogleView().handleNewLocation(location);
         }
-    }
-
-    private GoogleApiClient buildGoogleApiClient() {
-        GoogleApiClient.Builder googleApiClientBuilder = new GoogleApiClient.Builder(this);
-        googleApiClientBuilder.addConnectionCallbacks(this);
-        googleApiClientBuilder.addOnConnectionFailedListener(this);
-        googleApiClientBuilder.addApi(LocationServices.API);
-        return googleApiClientBuilder.build();
     }
 
     @Override
