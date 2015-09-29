@@ -2,6 +2,7 @@ package at.jku.cis.radar.service;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.google.maps.android.geojson.GeoJsonGeometry;
+import com.google.maps.android.geojson.GeoJsonGeometryCollection;
 import com.google.maps.android.geojson.GeoJsonLineString;
 import com.google.maps.android.geojson.GeoJsonMultiPolygon;
 import com.google.maps.android.geojson.GeoJsonPoint;
@@ -35,14 +36,16 @@ public class GeoJsonGeometryBuilder {
         return this;
     }
 
-    public GeoJsonGeometry build() {
+    public GeoJsonGeometryCollection build() {
+        GeoJsonGeometryCollection geoJsonGeometryCollection = new GeoJsonGeometryCollection(new ArrayList<GeoJsonGeometry>());
         if (DrawType.LINE == drawType) {
-            return new GeoJsonLineString(coordinates);
+            geoJsonGeometryCollection.getGeometries().add(new GeoJsonLineString(coordinates));
         } else if (DrawType.POLYGON == drawType) {
-            return createGeoJsonPolygon();
+            geoJsonGeometryCollection.getGeometries().add(createGeoJsonPolygon());
         } else {
-            return new GeoJsonPoint(coordinates.get(coordinates.size() - 1));
+            geoJsonGeometryCollection.getGeometries().add(new GeoJsonPoint(coordinates.get(coordinates.size() - 1)));
         }
+        return geoJsonGeometryCollection;
     }
 
     private GeoJsonGeometry createGeoJsonPolygon() {

@@ -3,11 +3,11 @@ package at.jku.cis.radar.command;
 import com.google.maps.android.geojson.GeoJsonFeature;
 import com.google.maps.android.geojson.GeoJsonLayer;
 
-public class AddGeometryCommand extends Command {
+public class AddFeatureCommand extends Command {
 
     private GeoJsonFeature geoJsonFeature;
 
-    public AddGeometryCommand(GeoJsonFeature geoJsonFeature, GeoJsonLayer geoJsonLayer) {
+    public AddFeatureCommand(GeoJsonFeature geoJsonFeature, GeoJsonLayer geoJsonLayer) {
         super(geoJsonLayer);
         this.geoJsonFeature = geoJsonFeature;
     }

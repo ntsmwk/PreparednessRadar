@@ -5,6 +5,7 @@ import android.graphics.Color;
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.maps.android.geojson.GeoJsonFeature;
 import com.google.maps.android.geojson.GeoJsonGeometry;
+import com.google.maps.android.geojson.GeoJsonGeometryCollection;
 import com.google.maps.android.geojson.GeoJsonLineString;
 import com.google.maps.android.geojson.GeoJsonLineStringStyle;
 import com.google.maps.android.geojson.GeoJsonMultiPolygon;
@@ -15,10 +16,10 @@ import com.google.maps.android.geojson.GeoJsonPolygonStyle;
 
 public class GeoJsonFeatureBuilder {
     private int color;
-    private GeoJsonGeometry geoJsonGeometry;
+    private GeoJsonGeometryCollection geoJsonGeometryCollection;
 
-    public GeoJsonFeatureBuilder(GeoJsonGeometry geoJsonGeometry) {
-        this.geoJsonGeometry = geoJsonGeometry;
+    public GeoJsonFeatureBuilder(GeoJsonGeometryCollection geoJsonGeometryCollection) {
+        this.geoJsonGeometryCollection = geoJsonGeometryCollection;
     }
 
     public GeoJsonFeatureBuilder setColor(int color) {
@@ -27,13 +28,15 @@ public class GeoJsonFeatureBuilder {
     }
 
     public GeoJsonFeature build() {
-        GeoJsonFeature geoJsonFeature = new GeoJsonFeature(geoJsonGeometry, "id", null, null);
-        if (geoJsonGeometry instanceof GeoJsonPoint) {
-            geoJsonFeature.setPointStyle(createPointStyle());
-        } else if (geoJsonGeometry instanceof GeoJsonLineString) {
-            geoJsonFeature.setLineStringStyle(createLineStringStyle());
-        } else if (geoJsonGeometry instanceof GeoJsonPolygon || geoJsonGeometry instanceof GeoJsonMultiPolygon) {
-            geoJsonFeature.setPolygonStyle(createPolygonStyle());
+        GeoJsonFeature geoJsonFeature = new GeoJsonFeature(geoJsonGeometryCollection, "id", null, null);
+        for(GeoJsonGeometry geoJsonGeometry : geoJsonGeometryCollection.getGeometries()){
+            if (geoJsonGeometry instanceof GeoJsonPoint) {
+                geoJsonFeature.setPointStyle(createPointStyle());
+            } else if (geoJsonGeometry instanceof GeoJsonLineString) {
+                geoJsonFeature.setLineStringStyle(createLineStringStyle());
+            } else if (geoJsonGeometry instanceof GeoJsonPolygon || geoJsonGeometry instanceof GeoJsonMultiPolygon) {
+                geoJsonFeature.setPolygonStyle(createPolygonStyle());
+            }
         }
         return geoJsonFeature;
     }

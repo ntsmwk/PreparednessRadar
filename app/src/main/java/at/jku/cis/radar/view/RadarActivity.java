@@ -2,6 +2,7 @@ package at.jku.cis.radar.view;
 
 import android.app.FragmentTransaction;
 import android.content.IntentSender;
+import android.graphics.Color;
 import android.location.Location;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -15,8 +16,10 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.MapFragment;
+import com.google.maps.android.geojson.GeoJsonFeature;
 
 import at.jku.cis.radar.R;
+import at.jku.cis.radar.geometry.GeometryUtils;
 import at.jku.cis.radar.model.ApplicationMode;
 import at.jku.cis.radar.model.DrawType;
 import at.jku.cis.radar.model.PenMode;
@@ -28,6 +31,8 @@ public class RadarActivity extends AppCompatActivity implements
         LocationListener {
     public static final String TAG = RadarActivity.class.getSimpleName();
     private final static int CONNECTION_FAILURE_RESOLUTION_REQUEST = 9000;
+    public static final float ALPHA_VISIBLE = 1.0f;
+    public static final float ALPHA_HIDDEN = 0.2f;
 
     private GoogleApiClient googleApiClient;
 
@@ -118,6 +123,7 @@ public class RadarActivity extends AppCompatActivity implements
                 deactivateDrawMenuItems(menu);
                 item.setIcon(R.drawable.polygon_icon_activated);
                 menu.findItem(R.id.erase).setIcon(R.drawable.pen_icon);
+
                 penSetting.setPenMode(PenMode.DRAWING);
                 penSetting.setDrawType(DrawType.POLYGON);
                 return true;
@@ -140,19 +146,33 @@ public class RadarActivity extends AppCompatActivity implements
         });
     }
 
-    private void setEditMenuClickListener(Menu menu) {
+    private void setEditMenuClickListener(final Menu menu) {
         menu.findItem(R.id.edit).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
                 GoogleView googleView = findGoogleView();
                 if (ApplicationMode.PAINTING == googleView.getApplicationMode()) {
+                    menu.findItem(R.id.edit).setTitle(R.string.edit);
+                    setSidebarDisabled(true, ALPHA_HIDDEN, Color.GRAY);
                     googleView.setApplicationMode(ApplicationMode.EDITING);
                 } else {
+                    menu.findItem(R.id.edit).setTitle(R.string.noEdit);
+                    setSidebarDisabled(false, ALPHA_VISIBLE, Color.WHITE);
+                    if(googleView.getCurrentEditingFeature() != null) {
+                        GeometryUtils.setNotEditableFeature(googleView.getCurrentEditingFeature());
+                        googleView.setCurrentEditingFeature(null);
+                    }
                     googleView.setApplicationMode(ApplicationMode.PAINTING);
                 }
                 return true;
             }
         });
+    }
+
+    private void setSidebarDisabled(boolean disabled, float alpha, int gray) {
+        ((EventTreeFragment) getFragmentManager().findFragmentById(R.id.SidebarLayout)).setDisabled(disabled);
+        findViewById(R.id.SidebarLayout).setAlpha(alpha);
+        findViewById(R.id.SidebarLayout).setBackgroundColor(gray);
     }
 
     private void deactivateDrawMenuItems(Menu menu){

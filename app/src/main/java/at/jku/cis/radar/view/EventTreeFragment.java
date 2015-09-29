@@ -27,6 +27,7 @@ public class EventTreeFragment extends Fragment implements ExpandableListView.On
 
     private List<Event> events;
     private List<EventClickListener> eventClickListeners = new ArrayList<>();
+    private boolean disabled = false;
 
     private ExpandableListView expandableListView;
 
@@ -55,13 +56,15 @@ public class EventTreeFragment extends Fragment implements ExpandableListView.On
     @Override
     public boolean onChildClick(ExpandableListView parent, View view, int groupPosition, int childPosition, long id) {
         Event event = (Event) parent.getExpandableListAdapter().getChild(groupPosition, childPosition);
-        if (event.isSelected()) {
-            event.setSelected(false);
-            fireEventSelectionChanged(event);
+        if (!disabled) {
+            if (event.isSelected()) {
+                event.setSelected(false);
+                fireEventSelectionChanged(event);
+            }
+            event.setVisible(!event.isVisible());
+            fireEventVisiblityChanged(event);
+            parent.invalidateViews();
         }
-        event.setVisible(!event.isVisible());
-        fireEventVisiblityChanged(event);
-        parent.invalidateViews();
         return true;
     }
 
@@ -81,6 +84,14 @@ public class EventTreeFragment extends Fragment implements ExpandableListView.On
         void handleEventVisibleChanged(Event event);
 
         void handleEventSelectionChanged(Event event);
+    }
+
+    public boolean isDisabled() {
+        return disabled;
+    }
+
+    public void setDisabled(boolean disabled) {
+        this.disabled = disabled;
     }
 
     private class EventExpandableListAdapter extends BaseExpandableListAdapter {
@@ -174,17 +185,21 @@ public class EventTreeFragment extends Fragment implements ExpandableListView.On
 
         @Override
         public void onCheckedChanged(CompoundButton buttonView, boolean selected) {
-            unselectEvents(events);
-            event.setSelected(selected);
-            fireEventSelectionChanged(event);
-            expandableListView.invalidateViews();
+            if (!disabled) {
+                deselectEvents(events);
+                event.setSelected(selected);
+                fireEventSelectionChanged(event);
+                expandableListView.invalidateViews();
+            } else {
+                buttonView.setChecked(!selected);
+            }
         }
 
-        private void unselectEvents(List<Event> eventList) {
+        private void deselectEvents(List<Event> eventList) {
             for (Event event : eventList) {
                 event.setSelected(false);
                 if (event.getEvents() != null) {
-                    unselectEvents(event.getEvents());
+                    deselectEvents(event.getEvents());
                 }
             }
         }
