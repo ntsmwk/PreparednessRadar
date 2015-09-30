@@ -46,6 +46,14 @@ public class GeometryTransformator {
         return new GeometryFactory().createGeometryCollection(geometryArrayList.toArray(new Geometry[geometryArrayList.size()]));
     }
 
+    public static GeoJsonGeometryCollection transformToGeoJsonGeometryCollection(GeometryCollection geometryCollection) {
+        ArrayList<GeoJsonGeometry> geoJsonGeometryArrayList = new ArrayList<>();
+        for(int i = 0; i < geometryCollection.getNumGeometries(); i++){
+            geoJsonGeometryArrayList.add(transformToGeoJsonGeometry(geometryCollection.getGeometryN(i)));
+        }
+        return new GeoJsonGeometryCollection(geoJsonGeometryArrayList);
+    }
+
     public static GeoJsonGeometry transformToGeoJsonGeometry(Geometry geometry) {
         GeoJsonGeometry geoJsonGeometry = null;
         if (geometry instanceof LineString) {

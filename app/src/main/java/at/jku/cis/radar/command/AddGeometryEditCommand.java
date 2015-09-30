@@ -4,27 +4,36 @@ package at.jku.cis.radar.command;
 import com.google.maps.android.geojson.GeoJsonFeature;
 import com.google.maps.android.geojson.GeoJsonGeometryCollection;
 import com.google.maps.android.geojson.GeoJsonLayer;
+import com.vividsolutions.jts.geom.GeometryCollection;
+
+import at.jku.cis.radar.convert.GeometryTransformator;
+import at.jku.cis.radar.geometry.GeometryUtils;
 
 public class AddGeometryEditCommand extends Command {
 
-    GeoJsonGeometryCollection geoJsonGeometryCollection;
+    GeoJsonGeometryCollection additionalGeometries;
+    GeoJsonGeometryCollection oldGeoJsonGeometryCollection;
     GeoJsonFeature geoJsonFeature;
 
-    public AddGeometryEditCommand(GeoJsonGeometryCollection geoJsonGeometryCollection, GeoJsonLayer geoJsonLayer, GeoJsonFeature geoJsonFeature) {
+    public AddGeometryEditCommand(GeoJsonGeometryCollection additionalGeometries, GeoJsonLayer geoJsonLayer, GeoJsonFeature geoJsonFeature) {
         super(geoJsonLayer);
-        this.geoJsonGeometryCollection = geoJsonGeometryCollection;
+        this.additionalGeometries = additionalGeometries;
         this.geoJsonFeature = geoJsonFeature;
+        this.oldGeoJsonGeometryCollection = (GeoJsonGeometryCollection)geoJsonFeature.getGeometry();
     }
 
     @Override
     public void doCommand() {
-        ((GeoJsonGeometryCollection) geoJsonFeature.getGeometry()).getGeometries().addAll(geoJsonGeometryCollection.getGeometries());
+        GeoJsonGeometryCollection geoJsonGeometryCollection = (GeoJsonGeometryCollection)geoJsonFeature.getGeometry();
+        geoJsonGeometryCollection.getGeometries().addAll(additionalGeometries.getGeometries());
+        GeometryCollection geometryCollection = GeometryTransformator.transformToGeometryCollection(geoJsonGeometryCollection);
+        geoJsonFeature.setGeometry(GeometryTransformator.transformToGeoJsonGeometryCollection(GeometryUtils.union(geometryCollection)));
         refreshLayer();
     }
 
     @Override
     public void undoCommand() {
-        ((GeoJsonGeometryCollection) geoJsonFeature.getGeometry()).getGeometries().removeAll(geoJsonGeometryCollection.getGeometries());
+        geoJsonFeature.setGeometry(oldGeoJsonGeometryCollection);
     }
 
     private void refreshLayer() {

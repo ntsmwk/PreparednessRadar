@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import at.jku.cis.radar.convert.GeometryTransformator;
+import at.jku.cis.radar.geometry.GeoJsonFeatureBuilder;
 
 public class GeoJsonIntersectionRemover {
 
@@ -53,7 +54,7 @@ public class GeoJsonIntersectionRemover {
                         geoJsonGeometryCollection.getGeometries().add(intersectionGeoJsonGeometry);
 
                     }
-                } else{
+                } else {
                     geoJsonGeometryCollection.getGeometries().add(geoJsonGeometry);
                 }
             }

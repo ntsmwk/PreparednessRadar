@@ -1,17 +1,12 @@
-package at.jku.cis.radar.service;
+package at.jku.cis.radar.geometry;
 
 import android.graphics.Color;
 
 import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.maps.android.geojson.GeoJsonFeature;
-import com.google.maps.android.geojson.GeoJsonGeometry;
 import com.google.maps.android.geojson.GeoJsonGeometryCollection;
-import com.google.maps.android.geojson.GeoJsonLineString;
 import com.google.maps.android.geojson.GeoJsonLineStringStyle;
-import com.google.maps.android.geojson.GeoJsonMultiPolygon;
-import com.google.maps.android.geojson.GeoJsonPoint;
 import com.google.maps.android.geojson.GeoJsonPointStyle;
-import com.google.maps.android.geojson.GeoJsonPolygon;
 import com.google.maps.android.geojson.GeoJsonPolygonStyle;
 
 public class GeoJsonFeatureBuilder {
@@ -29,15 +24,9 @@ public class GeoJsonFeatureBuilder {
 
     public GeoJsonFeature build() {
         GeoJsonFeature geoJsonFeature = new GeoJsonFeature(geoJsonGeometryCollection, "id", null, null);
-        for(GeoJsonGeometry geoJsonGeometry : geoJsonGeometryCollection.getGeometries()){
-            if (geoJsonGeometry instanceof GeoJsonPoint) {
-                geoJsonFeature.setPointStyle(createPointStyle());
-            } else if (geoJsonGeometry instanceof GeoJsonLineString) {
-                geoJsonFeature.setLineStringStyle(createLineStringStyle());
-            } else if (geoJsonGeometry instanceof GeoJsonPolygon || geoJsonGeometry instanceof GeoJsonMultiPolygon) {
-                geoJsonFeature.setPolygonStyle(createPolygonStyle());
-            }
-        }
+        geoJsonFeature.setPointStyle(createPointStyle());
+        geoJsonFeature.setLineStringStyle(createLineStringStyle());
+        geoJsonFeature.setPolygonStyle(createPolygonStyle());
         return geoJsonFeature;
     }
 
@@ -51,6 +40,7 @@ public class GeoJsonFeatureBuilder {
     private GeoJsonPolygonStyle createPolygonStyle() {
         GeoJsonPolygonStyle polygonStyle = new GeoJsonPolygonStyle();
         polygonStyle.setFillColor(color);
+        polygonStyle.setStrokeColor(color);
         return polygonStyle;
     }
 
