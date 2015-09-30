@@ -14,7 +14,6 @@ import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.maps.android.geojson.GeoJsonFeature;
-import com.google.maps.android.geojson.GeoJsonGeometry;
 import com.google.maps.android.geojson.GeoJsonGeometryCollection;
 import com.google.maps.android.geojson.GeoJsonLayer;
 import com.google.maps.android.geojson.GeoJsonPoint;
@@ -33,7 +32,6 @@ import at.jku.cis.radar.command.AddFeatureCommand;
 import at.jku.cis.radar.command.AddGeometryEditCommand;
 import at.jku.cis.radar.command.RemoveFeatureCommand;
 import at.jku.cis.radar.command.RemoveGeometryEditCommand;
-import at.jku.cis.radar.convert.GeometryTransformator;
 import at.jku.cis.radar.geometry.GeometryUtils;
 import at.jku.cis.radar.model.ApplicationMode;
 import at.jku.cis.radar.model.DrawType;
@@ -43,6 +41,7 @@ import at.jku.cis.radar.model.PenSetting;
 import at.jku.cis.radar.service.GeoJsonFeatureBuilder;
 import at.jku.cis.radar.service.GeoJsonGeometryBuilder;
 import at.jku.cis.radar.service.GeoJsonIntersectionRemover;
+import at.jku.cis.radar.transformer.GeoJsonGeometry2GeometryTransformer;
 
 
 public class GoogleView extends MapView implements OnMapReadyCallback, EventTreeFragment.EventClickListener {
@@ -153,7 +152,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     }
 
     private void setEditFeatureOnMap(GeoJsonPoint editPoint) {
-        Geometry editGeometry = GeometryTransformator.transformToGeometry(editPoint);
+        Geometry editGeometry = new GeoJsonGeometry2GeometryTransformer().transform(editPoint);
         List<GeoJsonFeature> featureList = new ArrayList<>();
         if(this.currentEditingFeature != null){
             GeometryUtils.setNotEditableFeature(this.currentEditingFeature);
@@ -163,7 +162,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
                 continue;
             }
             for (GeoJsonFeature feature : geoJsonLayer.getFeatures()) {
-                GeometryCollection geometryCollection = GeometryTransformator.transformToGeometryCollection((GeoJsonGeometryCollection)feature.getGeometry());
+                GeometryCollection geometryCollection = (GeometryCollection) new GeoJsonGeometry2GeometryTransformer().transform(feature.getGeometry());
                 if (GeometryUtils.intersects(geometryCollection, editGeometry)) {
                     featureList.add(feature);
                     continue;
@@ -208,11 +207,11 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
             GeoJsonGeometryCollection geoJsonGeometry = geoJsonGeometryBuilder.build();
             if(currentEditingFeature == null) {
                 GeoJsonIntersectionRemover geoJsonIntersectionRemover = new GeoJsonIntersectionRemover(geoJsonLayer.getFeatures(), geoJsonGeometry.getGeometries().get(0));
-                geoJsonIntersectionRemover.removeIntersectedGeometry();
+                geoJsonIntersectionRemover.intersectGeoJsonFeatures();
                 new RemoveFeatureCommand(getCorrespondingGeoJsonLayer(), geoJsonIntersectionRemover.getAddList(), geoJsonIntersectionRemover.getRemoveList()).doCommand();
             } else{
                 GeoJsonIntersectionRemover geoJsonIntersectionRemover = new GeoJsonIntersectionRemover(Arrays.asList(currentEditingFeature), geoJsonGeometry.getGeometries().get(0));
-                geoJsonIntersectionRemover.removeIntersectedGeometry();
+                geoJsonIntersectionRemover.intersectGeoJsonFeatures();
                 GeoJsonGeometryCollection newGeometryCollection = (GeoJsonGeometryCollection) geoJsonIntersectionRemover.getAddList().get(0).getGeometry();
                 new RemoveGeometryEditCommand(getCorrespondingGeoJsonLayer(), currentEditingFeature, newGeometryCollection).doCommand();
             }
