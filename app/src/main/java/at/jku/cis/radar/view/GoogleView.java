@@ -124,12 +124,12 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
     private void dispatchStylusTouchEvent(MotionEvent motionEvent) {
         Point currentPosition = new Point((int) motionEvent.getX(), (int) motionEvent.getY());
-        LatLng latLng = googleMap.getProjection().fromScreenLocation(currentPosition);
+        LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
         if (ApplicationMode.PAINTING == applicationMode) {
             if (PenMode.ERASING == penSetting.getPenMode()) {
-                doErasing(motionEvent, latLng);
+                doErasing(motionEvent, currentLatLng);
             } else {
-                doPainting(motionEvent, latLng);
+                doPainting(motionEvent, currentLatLng);
             }
         } else {
             if (editFeatureSelected()) {
@@ -217,7 +217,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     }
 
     private void doEditModeErasing(GeoJsonGeometryCollection geoJsonGeometry) {
-        GeoJsonIntersectionRemover geoJsonIntersectionRemover = new GeoJsonIntersectionRemover(Arrays.asList(currentEditingFeature), geoJsonGeometry.getGeometries().get(0));
+        GeoJsonIntersectionRemover geoJsonIntersectionRemover = new GeoJsonIntersectionRemover(Collections.singletonList(currentEditingFeature), geoJsonGeometry.getGeometries().get(0));
         geoJsonIntersectionRemover.intersectGeoJsonFeatures();
         GeoJsonGeometryCollection newGeometryCollection = (GeoJsonGeometryCollection) geoJsonIntersectionRemover.getAddList().get(0).getGeometry();
         new RemoveGeometryEditCommand(getCorrespondingGeoJsonLayer(), currentEditingFeature, newGeometryCollection).doCommand();

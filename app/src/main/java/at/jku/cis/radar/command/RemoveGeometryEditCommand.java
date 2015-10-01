@@ -7,8 +7,8 @@ import com.google.maps.android.geojson.GeoJsonLayer;
 
 public class RemoveGeometryEditCommand extends Command {
 
-    GeoJsonFeature feature;
-    GeoJsonGeometryCollection newGeoJsonGeometryCollection, oldGeoJsonGeometryCollection;
+    private GeoJsonFeature feature;
+    private GeoJsonGeometryCollection newGeoJsonGeometryCollection, oldGeoJsonGeometryCollection;
 
     public RemoveGeometryEditCommand(GeoJsonLayer geoJsonLayer, GeoJsonFeature feature, GeoJsonGeometryCollection newGeoJsonGeometryCollection) {
         super(geoJsonLayer);
