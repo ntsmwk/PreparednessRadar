@@ -18,12 +18,11 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-import at.jku.cis.radar.geometry.GeoJsonFeatureBuilder;
 import at.jku.cis.radar.transformer.GeoJsonGeometry2GeometryTransformer;
 import at.jku.cis.radar.transformer.Geometry2GeoJsonGeometryTransformer;
 
 public class GeoJsonIntersectionRemover {
-    private static final String TAG = "GeoJsonIntersectionRemover";
+    private static final String TAG = "IntersectionRemover";
 
     private Iterable<GeoJsonFeature> features;
     private GeoJsonGeometry geoJsonIntersectionGeometry;
@@ -97,5 +96,13 @@ public class GeoJsonIntersectionRemover {
 
     private Geometry transformToGeometries(GeoJsonGeometry geoJsonEraseGeometry) {
         return new GeoJsonGeometry2GeometryTransformer().transform(geoJsonEraseGeometry);
+    }
+
+    public List<GeoJsonFeature> getAddList() {
+        return addList;
+    }
+
+    public List<GeoJsonFeature> getRemoveList() {
+        return removeList;
     }
 }

@@ -32,15 +32,14 @@ import at.jku.cis.radar.command.AddFeatureCommand;
 import at.jku.cis.radar.command.AddGeometryEditCommand;
 import at.jku.cis.radar.command.RemoveFeatureCommand;
 import at.jku.cis.radar.command.RemoveGeometryEditCommand;
-import at.jku.cis.radar.convert.GeometryTransformator;
-import at.jku.cis.radar.geometry.GeoJsonFeatureBuilder;
-import at.jku.cis.radar.geometry.GeoJsonGeometryBuilder;
 import at.jku.cis.radar.geometry.GeometryUtils;
 import at.jku.cis.radar.model.ApplicationMode;
 import at.jku.cis.radar.model.DrawType;
 import at.jku.cis.radar.model.Event;
 import at.jku.cis.radar.model.PenMode;
 import at.jku.cis.radar.model.PenSetting;
+import at.jku.cis.radar.service.GeoJsonFeatureBuilder;
+import at.jku.cis.radar.service.GeoJsonGeometryBuilder;
 import at.jku.cis.radar.service.GeoJsonIntersectionRemover;
 import at.jku.cis.radar.transformer.GeoJsonGeometry2GeometryTransformer;
 
@@ -220,14 +219,14 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
     private void doEditModeErasing(GeoJsonGeometryCollection geoJsonGeometry) {
         GeoJsonIntersectionRemover geoJsonIntersectionRemover = new GeoJsonIntersectionRemover(Arrays.asList(currentEditingFeature), geoJsonGeometry.getGeometries().get(0));
-        geoJsonIntersectionRemover.removeIntersectedGeometry();
+        geoJsonIntersectionRemover.intersectGeoJsonFeatures();
         GeoJsonGeometryCollection newGeometryCollection = (GeoJsonGeometryCollection) geoJsonIntersectionRemover.getAddList().get(0).getGeometry();
         new RemoveGeometryEditCommand(getCorrespondingGeoJsonLayer(), currentEditingFeature, newGeometryCollection).doCommand();
     }
 
     private void doCreateModeErasing(GeoJsonLayer geoJsonLayer, GeoJsonGeometryCollection geoJsonGeometry) {
         GeoJsonIntersectionRemover geoJsonIntersectionRemover = new GeoJsonIntersectionRemover(geoJsonLayer.getFeatures(), geoJsonGeometry.getGeometries().get(0));
-        geoJsonIntersectionRemover.removeIntersectedGeometry();
+        geoJsonIntersectionRemover.intersectGeoJsonFeatures();
         new RemoveFeatureCommand(getCorrespondingGeoJsonLayer(), geoJsonIntersectionRemover.getAddList(), geoJsonIntersectionRemover.getRemoveList()).doCommand();
     }
 

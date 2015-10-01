@@ -12,7 +12,8 @@ import com.vividsolutions.jts.geom.TopologyException;
 
 import java.util.ArrayList;
 
-import at.jku.cis.radar.service.JTSUtils;
+import at.jku.cis.radar.service.PolygonRepairerService;
+
 
 public class GeometryUtils {
     private final static float EDIT_LINE_WIDTH = 10;
@@ -56,14 +57,6 @@ public class GeometryUtils {
         }
         collection = new GeometryFactory().createGeometryCollection(unionList.toArray(new Geometry[unionList.size()]));
         collection = repairGeometryCollection(collection);
-        if (!collection.isValid()) {
-            ArrayList<Integer> arrayList = new ArrayList<>();
-            arrayList.add(10);
-        }
-        if (!collection.isSimple()) {
-            ArrayList<Integer> arrayList = new ArrayList<>();
-            arrayList.add(10);
-        }
         return collection;
     }
 
@@ -71,9 +64,9 @@ public class GeometryUtils {
         ArrayList<Geometry> geometries = new ArrayList<>();
         for (int i = 0; i < collection.getNumGeometries(); i++) {
             if (collection.getGeometryN(i) instanceof Polygon) {
-                geometries.addAll(JTSUtils.repair((Polygon) collection.getGeometryN(i)));
+                geometries.addAll(PolygonRepairerService.repair((Polygon) collection.getGeometryN(i)));
             } else if (collection.getGeometryN(i) instanceof MultiPolygon) {
-                geometries.addAll(JTSUtils.repair((MultiPolygon) collection.getGeometryN(i)));
+                geometries.addAll(PolygonRepairerService.repair((MultiPolygon) collection.getGeometryN(i)));
             } else {
                 geometries.add(collection.getGeometryN(i));
             }

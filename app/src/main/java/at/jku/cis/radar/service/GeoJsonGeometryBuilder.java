@@ -4,7 +4,6 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.maps.android.geojson.GeoJsonGeometry;
 import com.google.maps.android.geojson.GeoJsonGeometryCollection;
 import com.google.maps.android.geojson.GeoJsonLineString;
-import com.google.maps.android.geojson.GeoJsonMultiPolygon;
 import com.google.maps.android.geojson.GeoJsonPoint;
 import com.google.maps.android.geojson.GeoJsonPolygon;
 import com.vividsolutions.jts.geom.GeometryCollection;
@@ -16,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import at.jku.cis.radar.convert.GeometryTransformator;
 import at.jku.cis.radar.geometry.GeometryUtils;
 import at.jku.cis.radar.model.DrawType;
 import at.jku.cis.radar.transformer.GeoJsonGeometry2GeometryTransformer;
@@ -36,7 +34,7 @@ public class GeoJsonGeometryBuilder {
         return this;
     }
 
-    public GeoJsonGeometryBuilder simplify(boolean simplify){
+    public GeoJsonGeometryBuilder simplify(boolean simplify) {
         this.simplify = simplify;
         return this;
     }
@@ -50,8 +48,8 @@ public class GeoJsonGeometryBuilder {
         } else {
             geoJsonGeometryCollection.getGeometries().add(new GeoJsonPoint(coordinates.get(coordinates.size() - 1)));
         }
-        GeometryCollection geometryCollection = new GeoJsonGeometry2GeometryTransformer().transform(geoJsonGeometryCollection);
-        return new Geometry2GeoJsonGeometryTransformer().transform(GeometryUtils.union(geometryCollection));
+        GeometryCollection geometryCollection = (GeometryCollection) (new GeoJsonGeometry2GeometryTransformer().transform(geoJsonGeometryCollection));
+        return (GeoJsonGeometryCollection) new Geometry2GeoJsonGeometryTransformer().transform(GeometryUtils.union(geometryCollection));
     }
 
     private GeoJsonGeometry createGeoJsonPolygon() {
