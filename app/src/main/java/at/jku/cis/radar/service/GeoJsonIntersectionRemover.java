@@ -22,7 +22,7 @@ import at.jku.cis.radar.transformer.GeoJsonGeometry2GeometryTransformer;
 import at.jku.cis.radar.transformer.Geometry2GeoJsonGeometryTransformer;
 
 public class GeoJsonIntersectionRemover {
-    private static final String TAG = "GeoJsonIntersectionRemover";
+    private static final String TAG = "IntersectionRemover";
 
     private Iterable<GeoJsonFeature> features;
     private GeoJsonGeometry geoJsonIntersectionGeometry;
@@ -49,8 +49,7 @@ public class GeoJsonIntersectionRemover {
         for (GeoJsonFeature feature : features) {
             Collection<Geometry> geometries = transformToGeometries(feature);
             Collection<Geometry> newGeometries = intersectionGeometries(geometryToIntersection, geometries);
-            GeoJsonFeature newFeature = transformToGeoJsonFeature(newGeometries, feature.getPolygonStyle().getFillColor());
-            addList.add(newFeature);
+            addList.add(transformToGeoJsonFeature(newGeometries, feature.getPolygonStyle().getFillColor()));
             removeList.add(feature);
         }
     }
@@ -93,8 +92,7 @@ public class GeoJsonIntersectionRemover {
     private GeoJsonFeature transformToGeoJsonFeature(Collection<Geometry> geometries, int color) {
         Collection<GeoJsonGeometry> geoJsonGeometries = CollectionUtils.collect(geometries, new Geometry2GeoJsonGeometryTransformer());
         GeoJsonGeometryCollection geoJsonGeometryCollection = new GeoJsonGeometryCollection(new ArrayList<>(geoJsonGeometries));
-        GeoJsonFeatureBuilder geoJsonFeatureBuilder = new GeoJsonFeatureBuilder(geoJsonGeometryCollection);
-        return geoJsonFeatureBuilder.setColor(color).build();
+        return new GeoJsonFeatureBuilder(geoJsonGeometryCollection).setColor(color).build();
     }
 
     private MultiPolygon createMultiPolygon(List<Polygon> polygons) {
