@@ -23,7 +23,7 @@ import com.vividsolutions.jts.geom.GeometryCollection;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -112,7 +112,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
     @Override
     public boolean dispatchTouchEvent(@NonNull MotionEvent motionEvent) {
-        if (googleMap != null && penSetting.getPaintingEvent() != null && paintingEnabled) {
+        if (paintingEnabled && googleMap != null && penSetting.getPaintingEvent() != null) {
             if (motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) {
                 dispatchStylusTouchEvent(motionEvent);
             } else {
@@ -122,14 +122,14 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         return true;
     }
 
-    private void dispatchStylusTouchEvent(@NonNull MotionEvent motionEvent) {
+    private void dispatchStylusTouchEvent(MotionEvent motionEvent) {
         Point currentPosition = new Point((int) motionEvent.getX(), (int) motionEvent.getY());
-        LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
+        LatLng latLng = googleMap.getProjection().fromScreenLocation(currentPosition);
         if (ApplicationMode.PAINTING == applicationMode) {
             if (PenMode.ERASING == penSetting.getPenMode()) {
-                doErasing(motionEvent, currentLatLng);
+                doErasing(motionEvent, latLng);
             } else {
-                doPainting(motionEvent, currentLatLng);
+                doPainting(motionEvent, latLng);
             }
         } else {
             if (editFeatureSelected()) {
@@ -169,7 +169,6 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
                 GeometryCollection geometryCollection = (GeometryCollection) new GeoJsonGeometry2GeometryTransformer().transform(feature.getGeometry());
                 if (GeometryUtils.intersects(geometryCollection, editGeometry)) {
                     featureList.add(feature);
-                    continue;
                 }
             }
             if (featureList.size() == 1) {
@@ -203,7 +202,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
     private void doErasing(@NonNull MotionEvent motionEvent, LatLng latLng) {
         if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
-            geoJsonGeometryBuilder = new GeoJsonGeometryBuilder(DrawType.POLYGON).simplify(false);
+            geoJsonGeometryBuilder = new GeoJsonGeometryBuilder(DrawType.POLYGON);
         }
         geoJsonGeometryBuilder.addCoordinate(latLng);
         if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
