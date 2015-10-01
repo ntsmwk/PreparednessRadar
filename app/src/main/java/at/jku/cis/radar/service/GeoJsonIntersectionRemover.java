@@ -9,7 +9,6 @@ import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.geom.Polygon;
-import com.vividsolutions.jts.geom.Polygonal;
 import com.vividsolutions.jts.geom.TopologyException;
 
 import org.apache.commons.collections4.CollectionUtils;
@@ -45,7 +44,9 @@ public class GeoJsonIntersectionRemover {
             for (Geometry geometryToIntersection : geometriesToIntersection) {
                 geometries = intersectionGeometries(geometryToIntersection, geometries);
             }
-            addList.add(transformToGeoJsonFeature(geometries, feature.getPolygonStyle().getFillColor()));
+            if (!geometries.isEmpty()) {
+                addList.add(transformToGeoJsonFeature(geometries, feature.getPolygonStyle().getFillColor()));
+            }
             removeList.add(feature);
         }
     }
@@ -57,17 +58,10 @@ public class GeoJsonIntersectionRemover {
             try {
                 if (geometry.intersects(geometryToIntersection)) {
                     Geometry intersectionGeometry = geometry.difference(geometryToIntersection);
-
-                    if (intersectionGeometry instanceof Polygon) {
-                        List<Polygon> polygons = PolygonRepairerService.repair((Polygon) intersectionGeometry);
-                        geometryList.add(createMultiPolygon(polygons));
-                    } else if (intersectionGeometry instanceof MultiPolygon) {
-                        List<Polygon> polygons = PolygonRepairerService.repair((MultiPolygon) intersectionGeometry);
-                        geometryList.add(createMultiPolygon(polygons));
-                    }
-
-                    if (intersectionGeometry instanceof Polygonal && !intersectionGeometry.isEmpty()) {
-                        geometryList.add(intersectionGeometry);
+                    if (intersectionGeometry instanceof Polygon && !intersectionGeometry.isEmpty()) {
+                        geometryList.add(createMultiPolygon(PolygonRepairerService.repair((Polygon) intersectionGeometry)));
+                    } else if (intersectionGeometry instanceof MultiPolygon && !intersectionGeometry.isEmpty()) {
+                        geometryList.add(createMultiPolygon(PolygonRepairerService.repair((MultiPolygon) intersectionGeometry)));
                     }
                 } else {
                     geometryList.add(geometry);
