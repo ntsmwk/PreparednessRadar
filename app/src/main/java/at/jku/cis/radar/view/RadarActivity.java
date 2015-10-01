@@ -16,7 +16,6 @@ import com.google.android.gms.location.LocationListener;
 import com.google.android.gms.location.LocationRequest;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.MapFragment;
-import com.google.maps.android.geojson.GeoJsonFeature;
 
 import at.jku.cis.radar.R;
 import at.jku.cis.radar.geometry.GeometryUtils;
@@ -236,8 +235,12 @@ public class RadarActivity extends AppCompatActivity implements
     protected void onPause() {
         super.onPause();
         if (googleApiClient.isConnected()) {
-            LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, this);
+            removeLocationUpdates();
             googleApiClient.disconnect();
         }
+    }
+
+    private void removeLocationUpdates() {
+        LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, this);
     }
 }
