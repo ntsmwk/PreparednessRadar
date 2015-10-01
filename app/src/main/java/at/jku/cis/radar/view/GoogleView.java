@@ -14,6 +14,7 @@ import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.maps.android.geojson.GeoJsonFeature;
+import com.google.maps.android.geojson.GeoJsonGeometry;
 import com.google.maps.android.geojson.GeoJsonGeometryCollection;
 import com.google.maps.android.geojson.GeoJsonLayer;
 import com.google.maps.android.geojson.GeoJsonPoint;
@@ -23,7 +24,7 @@ import com.vividsolutions.jts.geom.GeometryCollection;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -134,12 +135,12 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         } else {
             if (editFeatureSelected()) {
                 if (PenMode.ERASING == penSetting.getPenMode()) {
-                    doErasing(motionEvent, currentLatLng);
+                    doErasing(motionEvent, latLng);
                 } else {
-                    doPainting(motionEvent, currentLatLng);
+                    doPainting(motionEvent, latLng);
                 }
             } else {
-                selectEditableFeature(motionEvent, currentLatLng);
+                selectEditableFeature(motionEvent, latLng);
             }
         }
     }
@@ -172,14 +173,14 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
                 }
             }
             if (featureList.size() == 1) {
-                getSetEditableFeature(featureList.get(0), geoJsonLayer);
+                getSetEditableFeature(featureList.get(0));
             } else {
                 Toast.makeText(getContext(), "Can only edit one Event. Please click on the specific area without other overlapping events.", Toast.LENGTH_SHORT).show();
             }
         }
     }
 
-    private void getSetEditableFeature(GeoJsonFeature feature, GeoJsonLayer geoJsonLayer) {
+    private void getSetEditableFeature(GeoJsonFeature feature) {
         this.currentEditingFeature = feature;
         GeometryUtils.setEditableFeature(feature);
     }
@@ -219,7 +220,10 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     private void doEditModeErasing(GeoJsonGeometryCollection geoJsonGeometry) {
         GeoJsonIntersectionRemover geoJsonIntersectionRemover = new GeoJsonIntersectionRemover(Arrays.asList(currentEditingFeature), geoJsonGeometry.getGeometries().get(0));
         geoJsonIntersectionRemover.intersectGeoJsonFeatures();
-        GeoJsonGeometryCollection newGeometryCollection = (GeoJsonGeometryCollection) geoJsonIntersectionRemover.getAddList().get(0).getGeometry();
+        GeoJsonGeometryCollection newGeometryCollection = new GeoJsonGeometryCollection(new ArrayList<GeoJsonGeometry>());
+        if(!geoJsonIntersectionRemover.getAddList().isEmpty()) {
+            newGeometryCollection = (GeoJsonGeometryCollection) geoJsonIntersectionRemover.getAddList().get(0).getGeometry();
+        }
         new RemoveGeometryEditCommand(getCorrespondingGeoJsonLayer(), currentEditingFeature, newGeometryCollection).doCommand();
     }
 
