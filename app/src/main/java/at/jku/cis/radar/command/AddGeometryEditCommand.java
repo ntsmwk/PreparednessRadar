@@ -34,6 +34,7 @@ public class AddGeometryEditCommand extends Command {
     @Override
     public void undoCommand() {
         geoJsonFeature.setGeometry(oldGeoJsonGeometryCollection);
+        refreshLayer();
     }
 
     private void refreshLayer() {
