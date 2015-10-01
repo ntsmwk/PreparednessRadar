@@ -24,7 +24,7 @@ import com.vividsolutions.jts.geom.GeometryCollection;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -135,12 +135,12 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         } else {
             if (editFeatureSelected()) {
                 if (PenMode.ERASING == penSetting.getPenMode()) {
-                    doErasing(motionEvent, latLng);
+                    doErasing(motionEvent, currentLatLng);
                 } else {
-                    doPainting(motionEvent, latLng);
+                    doPainting(motionEvent, currentLatLng);
                 }
             } else {
-                selectEditableFeature(motionEvent, latLng);
+                selectEditableFeature(motionEvent, currentLatLng);
             }
         }
     }
@@ -221,7 +221,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         GeoJsonIntersectionRemover geoJsonIntersectionRemover = new GeoJsonIntersectionRemover(Collections.singletonList(currentEditingFeature), geoJsonGeometry.getGeometries().get(0));
         geoJsonIntersectionRemover.intersectGeoJsonFeatures();
         GeoJsonGeometryCollection newGeometryCollection = new GeoJsonGeometryCollection(new ArrayList<GeoJsonGeometry>());
-        if(!geoJsonIntersectionRemover.getAddList().isEmpty()) {
+        if (!geoJsonIntersectionRemover.getAddList().isEmpty()) {
             newGeometryCollection = (GeoJsonGeometryCollection) geoJsonIntersectionRemover.getAddList().get(0).getGeometry();
         }
         new RemoveGeometryEditCommand(getCorrespondingGeoJsonLayer(), currentEditingFeature, newGeometryCollection).doCommand();
