@@ -1,4 +1,4 @@
-package at.jku.cis.radar.geometry;
+package at.jku.cis.radar.service;
 
 import android.graphics.Color;
 

@@ -42,6 +42,7 @@ import at.jku.cis.radar.model.Event;
 import at.jku.cis.radar.model.PenMode;
 import at.jku.cis.radar.model.PenSetting;
 import at.jku.cis.radar.service.GeoJsonIntersectionRemover;
+import at.jku.cis.radar.transformer.GeoJsonGeometry2GeometryTransformer;
 
 
 public class GoogleView extends MapView implements OnMapReadyCallback, EventTreeFragment.EventClickListener {
@@ -156,7 +157,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     }
 
     private void setEditFeatureOnMap(GeoJsonPoint editPoint) {
-        Geometry editGeometry = GeometryTransformator.transformToGeometry(editPoint);
+        Geometry editGeometry = new GeoJsonGeometry2GeometryTransformer().transform(editPoint);
         List<GeoJsonFeature> featureList = new ArrayList<>();
         if (this.currentEditingFeature != null) {
             GeometryUtils.setNotEditableFeature(this.currentEditingFeature);
@@ -166,7 +167,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
                 continue;
             }
             for (GeoJsonFeature feature : geoJsonLayer.getFeatures()) {
-                GeometryCollection geometryCollection = GeometryTransformator.transformToGeometryCollection((GeoJsonGeometryCollection) feature.getGeometry());
+                GeometryCollection geometryCollection = (GeometryCollection) new GeoJsonGeometry2GeometryTransformer().transform(feature.getGeometry());
                 if (GeometryUtils.intersects(geometryCollection, editGeometry)) {
                     featureList.add(feature);
                     continue;

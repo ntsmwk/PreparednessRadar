@@ -1,4 +1,4 @@
-package at.jku.cis.radar.geometry;
+package at.jku.cis.radar.service;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.google.maps.android.geojson.GeoJsonGeometry;
@@ -13,11 +13,14 @@ import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.geom.Polygon;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import at.jku.cis.radar.convert.GeometryTransformator;
+import at.jku.cis.radar.geometry.GeometryUtils;
 import at.jku.cis.radar.model.DrawType;
-import at.jku.cis.radar.service.JTSUtils;
+import at.jku.cis.radar.transformer.GeoJsonGeometry2GeometryTransformer;
+import at.jku.cis.radar.transformer.Geometry2GeoJsonGeometryTransformer;
 
 public class GeoJsonGeometryBuilder {
     private DrawType drawType;
@@ -47,29 +50,39 @@ public class GeoJsonGeometryBuilder {
         } else {
             geoJsonGeometryCollection.getGeometries().add(new GeoJsonPoint(coordinates.get(coordinates.size() - 1)));
         }
-        GeometryCollection geometryCollection = GeometryTransformator.transformToGeometryCollection(geoJsonGeometryCollection);
-        return GeometryTransformator.transformToGeoJsonGeometryCollection(GeometryUtils.union(geometryCollection));
+        GeometryCollection geometryCollection = new GeoJsonGeometry2GeometryTransformer().transform(geoJsonGeometryCollection);
+        return new Geometry2GeoJsonGeometryTransformer().transform(GeometryUtils.union(geometryCollection));
     }
 
     private GeoJsonGeometry createGeoJsonPolygon() {
-        GeoJsonPolygon geoJsonPolygon = new GeoJsonPolygon(createListOfCoordinates(coordinates));
-        Polygon polygon = (Polygon) GeometryTransformator.transformToGeometry(geoJsonPolygon);
-        if (polygon.isSimple() || !simplify) {
+        GeoJsonPolygon geoJsonPolygon = new GeoJsonPolygon(Arrays.asList(coordinates));
+        if (simplify) {
+            Polygon polygon = transformToPolygon(geoJsonPolygon);
+            if (polygon.isSimple()) {
+                return geoJsonPolygon;
+            }
+            List<Polygon> polygons = PolygonRepairerService.repair(polygon);
+            if (polygons.size() == 1) {
+                return transformToGeoJsonPolygon(polygons.get(0));
+            }
+            return transformToGeoJsonMultiPolygon(polygons);
+        } else {
             return geoJsonPolygon;
         }
-        return createComplexPolygon(polygon);
     }
 
-    private List<List<LatLng>> createListOfCoordinates(List<LatLng> coordinates) {
-        List<List<LatLng>> listOfCoordinates = new ArrayList<>();
-        listOfCoordinates.add(coordinates);
-        return listOfCoordinates;
+    private GeoJsonGeometry transformToGeoJsonMultiPolygon(List<Polygon> polygons) {
+        Polygon[] polygonArray = polygons.toArray(new Polygon[polygons.size()]);
+        MultiPolygon multiPolygon = new GeometryFactory().createMultiPolygon(polygonArray);
+        return new Geometry2GeoJsonGeometryTransformer().transform(multiPolygon);
     }
 
-    private GeoJsonMultiPolygon createComplexPolygon(Polygon polygon) {
-        List<Polygon> polygons = JTSUtils.repair(polygon);
-        MultiPolygon multiPolygon = new GeometryFactory().createMultiPolygon(polygons.toArray(new Polygon[polygons.size()]));
-        GeoJsonMultiPolygon geoJsonPolygon = (GeoJsonMultiPolygon) GeometryTransformator.transformToGeoJsonGeometry(multiPolygon);
-        return geoJsonPolygon;
+    private GeoJsonGeometry transformToGeoJsonPolygon(Polygon polygon) {
+        return new Geometry2GeoJsonGeometryTransformer().transform(polygon);
     }
+
+    private Polygon transformToPolygon(GeoJsonPolygon geoJsonPolygon) {
+        return (Polygon) new GeoJsonGeometry2GeometryTransformer().transform(geoJsonPolygon);
+    }
+
 }
