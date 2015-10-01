@@ -16,6 +16,7 @@ import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 import at.jku.cis.radar.transformer.GeoJsonGeometry2GeometryTransformer;
@@ -44,12 +45,14 @@ public class GeoJsonIntersectionRemover {
     }
 
     public void intersectGeoJsonFeatures() {
-        Geometry geometryToIntersection = transformToGeometries(geoJsonIntersectionGeometry);
+        List<Geometry> geometriesToIntersection = transformToGeometries(geoJsonIntersectionGeometry);
 
         for (GeoJsonFeature feature : features) {
             Collection<Geometry> geometries = transformToGeometries(feature);
-            Collection<Geometry> newGeometries = intersectionGeometries(geometryToIntersection, geometries);
-            addList.add(transformToGeoJsonFeature(newGeometries, feature.getPolygonStyle().getFillColor()));
+            for (Geometry geometryToIntersection : geometriesToIntersection) {
+                geometries = intersectionGeometries(geometryToIntersection, geometries);
+            }
+            addList.add(transformToGeoJsonFeature(geometries, feature.getPolygonStyle().getFillColor()));
             removeList.add(feature);
         }
     }
@@ -58,27 +61,26 @@ public class GeoJsonIntersectionRemover {
         List<Geometry> geometryList = new ArrayList<>();
 
         for (Geometry geometry : geometries) {
-            if (geometry.intersects(geometryToIntersection)) {
-                Geometry intersectionGeometry = null;
-                try {
-                    intersectionGeometry = geometry.difference(geometryToIntersection);
-                } catch (TopologyException e) {
-                    Log.e(TAG, "Could not intersect geometry", e);
-                }
+            try {
+                if (geometry.intersects(geometryToIntersection)) {
+                    Geometry intersectionGeometry = geometry.difference(geometryToIntersection);
 
-                if (intersectionGeometry instanceof Polygon) {
-                    List<Polygon> polygons = PolygonRepairerService.repair((Polygon) intersectionGeometry);
-                    geometryList.add(createMultiPolygon(polygons));
-                } else if (intersectionGeometry instanceof MultiPolygon) {
-                    List<Polygon> polygons = PolygonRepairerService.repair((MultiPolygon) intersectionGeometry);
-                    geometryList.add(createMultiPolygon(polygons));
-                }
+                    if (intersectionGeometry instanceof Polygon) {
+                        List<Polygon> polygons = PolygonRepairerService.repair((Polygon) intersectionGeometry);
+                        geometryList.add(createMultiPolygon(polygons));
+                    } else if (intersectionGeometry instanceof MultiPolygon) {
+                        List<Polygon> polygons = PolygonRepairerService.repair((MultiPolygon) intersectionGeometry);
+                        geometryList.add(createMultiPolygon(polygons));
+                    }
 
-                if (intersectionGeometry instanceof Polygonal && !intersectionGeometry.isEmpty()) {
-                    geometryList.add(intersectionGeometry);
+                    if (intersectionGeometry instanceof Polygonal && !intersectionGeometry.isEmpty()) {
+                        geometryList.add(intersectionGeometry);
+                    }
+                } else {
+                    geometryList.add(geometry);
                 }
-            } else {
-                geometryList.add(geometry);
+            } catch (TopologyException e) {
+                Log.e(TAG, "Could not intersect geometry[" + geometry.toString() + "]", e);
             }
         }
         return geometryList;
@@ -95,11 +97,23 @@ public class GeoJsonIntersectionRemover {
         return new GeoJsonFeatureBuilder(geoJsonGeometryCollection).setColor(color).build();
     }
 
-    private MultiPolygon createMultiPolygon(List<Polygon> polygons) {
-        return new GeometryFactory().createMultiPolygon(polygons.toArray(new Polygon[polygons.size()]));
+    private List<Geometry> transformToGeometries(GeoJsonGeometry geoJsonEraseGeometry) {
+        Geometry geometry = new GeoJsonGeometry2GeometryTransformer().transform(geoJsonEraseGeometry);
+        if (geometry instanceof Polygon) {
+            return Collections.singletonList(geometry);
+        }
+        return transformToGeometries((MultiPolygon) geometry);
     }
 
-    private Geometry transformToGeometries(GeoJsonGeometry geoJsonEraseGeometry) {
-        return new GeoJsonGeometry2GeometryTransformer().transform(geoJsonEraseGeometry);
+    private List<Geometry> transformToGeometries(MultiPolygon geometry) {
+        List<Geometry> geometries = new ArrayList<>();
+        for (int i = 0; i < geometry.getNumGeometries(); i++) {
+            geometries.add(geometry.getGeometryN(i));
+        }
+        return geometries;
+    }
+
+    private MultiPolygon createMultiPolygon(List<Polygon> polygons) {
+        return new GeometryFactory().createMultiPolygon(polygons.toArray(new Polygon[polygons.size()]));
     }
 }

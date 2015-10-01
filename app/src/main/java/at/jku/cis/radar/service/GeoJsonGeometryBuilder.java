@@ -11,7 +11,7 @@ import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.geom.Polygon;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import at.jku.cis.radar.model.DrawType;
@@ -20,7 +20,6 @@ import at.jku.cis.radar.transformer.Geometry2GeoJsonGeometryTransformer;
 
 public class GeoJsonGeometryBuilder {
     private DrawType drawType;
-    private boolean simplify = true;
     private List<LatLng> coordinates = new ArrayList<>();
 
     public GeoJsonGeometryBuilder(DrawType drawType) {
@@ -29,11 +28,6 @@ public class GeoJsonGeometryBuilder {
 
     public GeoJsonGeometryBuilder addCoordinate(LatLng coordinate) {
         coordinates.add(coordinate);
-        return this;
-    }
-
-    public GeoJsonGeometryBuilder simplify(boolean simplify){
-        this.simplify = simplify;
         return this;
     }
 
@@ -50,20 +44,19 @@ public class GeoJsonGeometryBuilder {
     }
 
     private GeoJsonGeometry createGeoJsonPolygon() {
-        GeoJsonPolygon geoJsonPolygon = new GeoJsonPolygon(Arrays.asList(coordinates));
-        if (simplify) {
-            Polygon polygon = transformToPolygon(geoJsonPolygon);
-            if (polygon.isSimple()) {
-                return geoJsonPolygon;
-            }
-            List<Polygon> polygons = PolygonRepairerService.repair(polygon);
-            if (polygons.size() == 1) {
-                return transformToGeoJsonPolygon(polygons.get(0));
-            }
-            return transformToGeoJsonMultiPolygon(polygons);
-        } else {
+        GeoJsonPolygon geoJsonPolygon = new GeoJsonPolygon(Collections.singletonList(coordinates));
+        Polygon polygon = transformToPolygon(geoJsonPolygon);
+        if (polygon.isSimple()) {
             return geoJsonPolygon;
         }
+        return transformToGeoJsonGeometry(PolygonRepairerService.repair(polygon));
+    }
+
+    private GeoJsonGeometry transformToGeoJsonGeometry(List<Polygon> polygons) {
+        if (polygons.size() == 1) {
+            return transformToGeoJsonPolygon(polygons.get(0));
+        }
+        return transformToGeoJsonMultiPolygon(polygons);
     }
 
     private GeoJsonGeometry transformToGeoJsonMultiPolygon(List<Polygon> polygons) {
@@ -79,5 +72,4 @@ public class GeoJsonGeometryBuilder {
     private Polygon transformToPolygon(GeoJsonPolygon geoJsonPolygon) {
         return (Polygon) new GeoJsonGeometry2GeometryTransformer().transform(geoJsonPolygon);
     }
-
 }
