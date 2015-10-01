@@ -5,11 +5,11 @@ import com.google.maps.android.geojson.GeoJsonLayer;
 
 import java.util.List;
 
-public class RemoveFeatureCommand extends Command{
+public class RemoveFeatureCommand extends Command {
 
     private List<GeoJsonFeature> addList, removeList;
 
-    public RemoveFeatureCommand(GeoJsonLayer geoJsonLayer, List<GeoJsonFeature> addList, List<GeoJsonFeature> removeList){
+    public RemoveFeatureCommand(GeoJsonLayer geoJsonLayer, List<GeoJsonFeature> addList, List<GeoJsonFeature> removeList) {
         super(geoJsonLayer);
         this.addList = addList;
         this.removeList = removeList;
@@ -17,22 +17,22 @@ public class RemoveFeatureCommand extends Command{
 
     @Override
     public void doCommand() {
-        for(GeoJsonFeature feature : removeList){
-            geoJsonLayer.removeFeature(feature);
+
+        for (GeoJsonFeature feature : removeList) {
+                geoJsonLayer.removeFeature(feature);
         }
         for (GeoJsonFeature feature : addList) {
-            geoJsonLayer.addFeature(feature);
+                geoJsonLayer.addFeature(feature);
         }
     }
 
     @Override
     public void undoCommand() {
-        for(GeoJsonFeature feature : addList){
-            geoJsonLayer.removeFeature(feature);
+        for (GeoJsonFeature feature : addList) {
+                geoJsonLayer.removeFeature(feature);
         }
-        for(GeoJsonFeature feature : removeList){
+        for (GeoJsonFeature feature : removeList) {
             geoJsonLayer.addFeature(feature);
         }
-
     }
 }

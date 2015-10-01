@@ -4,17 +4,21 @@ import android.support.annotation.NonNull;
 
 import com.google.android.gms.maps.model.LatLng;
 import com.google.maps.android.geojson.GeoJsonGeometry;
+import com.google.maps.android.geojson.GeoJsonGeometryCollection;
 import com.google.maps.android.geojson.GeoJsonLineString;
 import com.google.maps.android.geojson.GeoJsonMultiPolygon;
 import com.google.maps.android.geojson.GeoJsonPoint;
 import com.google.maps.android.geojson.GeoJsonPolygon;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
+import com.vividsolutions.jts.geom.GeometryCollection;
+import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.geom.Polygon;
 
+import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.Transformer;
 
 import java.util.ArrayList;
@@ -36,8 +40,25 @@ public class Geometry2GeoJsonGeometryTransformer implements Transformer<Geometry
             geoJsonGeometry = new GeoJsonPoint(toLatLng(geometry.getCoordinate()));
         } else if (geometry instanceof MultiPolygon) {
             geoJsonGeometry = createGeoJsonMultiPolygon((MultiPolygon) geometry);
+        } else if (geometry instanceof GeometryCollection){
+            geoJsonGeometry = createGeoJsonGeometryCollection((GeometryCollection)geometry);
         }
         return geoJsonGeometry;
+    }
+
+    @NonNull
+    private GeoJsonGeometry createGeoJsonGeometryCollection(GeometryCollection geometry) {
+        GeoJsonGeometry geoJsonGeometry;List<GeoJsonGeometry> geometries = new ArrayList<>(CollectionUtils.collect(getGeometries(geometry), this));
+        geoJsonGeometry = new GeoJsonGeometryCollection(geometries);
+        return geoJsonGeometry;
+    }
+
+    private List<Geometry> getGeometries(GeometryCollection geometryCollection){
+        List<Geometry> geometries = new ArrayList<>();
+        for(int i = 0; i < geometryCollection.getNumGeometries(); i++){
+            geometries.add(geometryCollection.getGeometryN(i));
+        }
+        return geometries;
     }
 
     private GeoJsonMultiPolygon createGeoJsonMultiPolygon(MultiPolygon geometry) {
