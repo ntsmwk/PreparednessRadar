@@ -113,10 +113,10 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
     @Override
     public boolean dispatchTouchEvent(@NonNull MotionEvent motionEvent) {
-        if (paintingEnabled && googleMap != null && penSetting.getPaintingEvent() != null) {
-            if (motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) {
+        if (googleMap != null) {
+            if (paintingEnabled &&motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS && penSetting.getPaintingEvent() != null ) {
                 dispatchStylusTouchEvent(motionEvent);
-            } else {
+            } else if(motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_FINGER){
                 super.dispatchTouchEvent(motionEvent);
             }
         }
@@ -126,7 +126,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     private void dispatchStylusTouchEvent(MotionEvent motionEvent) {
         Point currentPosition = new Point((int) motionEvent.getX(), (int) motionEvent.getY());
         LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
-        if (ApplicationMode.PAINTING == applicationMode) {
+        if ( ApplicationMode.PAINTING == applicationMode) {
             if (PenMode.ERASING == penSetting.getPenMode()) {
                 doErasing(motionEvent, currentLatLng);
             } else {
