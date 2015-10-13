@@ -1,16 +1,16 @@
 package at.jku.cis.radar.rest;
 
+import at.jku.cis.radar.converter.RadarJacksonConverter;
 import retrofit.RestAdapter;
-import retrofit.android.AndroidApacheClient;
 
 public class RestServiceGenerator {
 
-    private static final String BASE_URL = "http://localhost:8080/rest";
+    private static final String BASE_URL = "http://10.0.0.36:8080/rest";
 
     public static <S> S createService(Class<S> serviceClass) {
-        RestAdapter.Builder builder = new RestAdapter.Builder()
-                .setEndpoint(BASE_URL)
-                .setClient(new AndroidApacheClient());
+        RestAdapter.Builder builder = new RestAdapter.Builder();
+        builder.setEndpoint(BASE_URL);
+        builder.setConverter(new RadarJacksonConverter());
         return builder.build().create(serviceClass);
     }
 }

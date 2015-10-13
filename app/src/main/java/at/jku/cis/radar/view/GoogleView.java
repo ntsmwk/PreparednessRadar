@@ -5,6 +5,7 @@ import android.graphics.Point;
 import android.location.Location;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.MotionEvent;
 import android.widget.Toast;
 
@@ -27,6 +28,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import at.jku.cis.radar.command.AddFeatureCommand;
 import at.jku.cis.radar.command.AddGeometryEditCommand;
@@ -38,13 +40,21 @@ import at.jku.cis.radar.model.DrawType;
 import at.jku.cis.radar.model.Event;
 import at.jku.cis.radar.model.PenMode;
 import at.jku.cis.radar.model.PenSetting;
+import at.jku.cis.radar.rest.FeaturesRestApi;
+import at.jku.cis.radar.rest.RestServiceGenerator;
 import at.jku.cis.radar.service.GeoJsonFeatureBuilder;
 import at.jku.cis.radar.service.GeoJsonGeometryBuilder;
 import at.jku.cis.radar.service.GeoJsonIntersectionRemover;
+import at.jku.cis.radar.task.GetFeaturesTask;
+import at.jku.cis.radar.transformer.GeoJsonFeature2JsonObjectTransformer;
 import at.jku.cis.radar.transformer.GeoJsonGeometry2GeometryTransformer;
+import retrofit.Callback;
+import retrofit.RetrofitError;
+import retrofit.client.Response;
 
 
 public class GoogleView extends MapView implements OnMapReadyCallback, EventTreeFragment.EventClickListener {
+    private static final String TAG = "GoogleView";
     private GoogleMap googleMap;
 
     private boolean paintingEnabled = false;
@@ -54,7 +64,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
     private GeoJsonGeometryBuilder geoJsonGeometryBuilder;
 
-    private Map<String, GeoJsonLayer> geoJsonLayers = new HashMap<>();
+    private Map<Event, GeoJsonLayer> geoJsonLayers = new HashMap<>();
 
     public GoogleView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -82,7 +92,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
     @Override
     public void handleEventVisibleChanged(Event event) {
-        GeoJsonLayer geoJsonLayer = findGeoJsonLayerByEventName(event.getName());
+        GeoJsonLayer geoJsonLayer = findGeoJsonLayerByEvent(event);
         if (event.isVisible()) {
             geoJsonLayer.addLayerToMap();
         } else {
@@ -92,27 +102,38 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
     @Override
     public void handleEventSelectionChanged(Event event) {
-        GeoJsonLayer geoJsonLayer = findGeoJsonLayerByEventName(event.getName());
+        GeoJsonLayer geoJsonLayer = findGeoJsonLayerByEvent(event);
         if (event.isSelected()) {
             geoJsonLayer.addLayerToMap();
         }
         paintingEnabled = event.isSelected();
         penSetting.setColor(event.getColor());
-        penSetting.setPaintingEvent(event.getName());
+        penSetting.setEvent(event);
     }
 
-    private GeoJsonLayer findGeoJsonLayerByEventName(String eventName) {
-        GeoJsonLayer geoJsonLayer = geoJsonLayers.get(eventName);
+    private GeoJsonLayer findGeoJsonLayerByEvent(Event event) {
+        GeoJsonLayer geoJsonLayer = geoJsonLayers.get(event);
         if (geoJsonLayer == null) {
-            geoJsonLayer = new GeoJsonLayer(googleMap, new JSONObject());
-            geoJsonLayers.put(eventName, geoJsonLayer);
+            JSONObject jsonObject = loadFeatures(event);
+            geoJsonLayer = new GeoJsonLayer(googleMap, jsonObject);
+            geoJsonLayer.getDefaultPolygonStyle().setFillColor(event.getColor());
+            geoJsonLayer.getDefaultLineStringStyle().setColor(event.getColor());
+            geoJsonLayers.put(event, geoJsonLayer);
         }
         return geoJsonLayer;
     }
 
+    private JSONObject loadFeatures(Event event) {
+        try {
+            return new GetFeaturesTask().execute(event.getId()).get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @Override
     public boolean dispatchTouchEvent(@NonNull MotionEvent motionEvent) {
-        if (paintingEnabled && googleMap != null && penSetting.getPaintingEvent() != null) {
+        if (paintingEnabled && googleMap != null && penSetting.getEvent() != null) {
             if (motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS) {
                 dispatchStylusTouchEvent(motionEvent);
             } else {
@@ -194,6 +215,21 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
             if (ApplicationMode.PAINTING == applicationMode) {
                 GeoJsonFeature geoJsonFeature = new GeoJsonFeatureBuilder(geoJsonGeometry).setColor(penSetting.getColor()).build();
                 new AddFeatureCommand(geoJsonFeature, getCorrespondingGeoJsonLayer()).doCommand();
+                JSONObject jsonFeature = new GeoJsonFeature2JsonObjectTransformer().transform(geoJsonFeature);
+                FeaturesRestApi featuresRestApi = RestServiceGenerator.createService(FeaturesRestApi.class);
+                featuresRestApi.saveFeature(penSetting.getEvent().getId(), jsonFeature, new Callback() {
+
+                    @Override
+                    public void success(Object o, Response response) {
+                        Toast.makeText(getContext(), "Features is saved", Toast.LENGTH_LONG).show();
+                    }
+
+                    @Override
+                    public void failure(RetrofitError error) {
+                        Log.e(TAG, "Could not save feature", error);
+                        Toast.makeText(getContext(), "Features is not saved", Toast.LENGTH_LONG).show();
+                    }
+                });
             } else {
                 new AddGeometryEditCommand(geoJsonGeometry, getCorrespondingGeoJsonLayer(), currentEditingFeature).doCommand();
             }
@@ -230,7 +266,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     }
 
     private GeoJsonLayer getCorrespondingGeoJsonLayer() {
-        return geoJsonLayers.get(penSetting.getPaintingEvent());
+        return geoJsonLayers.get(penSetting.getEvent());
     }
 
 

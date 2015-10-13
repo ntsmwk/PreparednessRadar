@@ -6,7 +6,7 @@ public class PenSetting {
     private PenMode penMode = PenMode.DRAWING;
     private DrawType drawType = DrawType.POLYGON;
     private int color = Color.BLACK;
-    private String paintingEvent;
+    private Event event;
 
     public PenMode getPenMode() {
         return penMode;
@@ -24,12 +24,12 @@ public class PenSetting {
         this.color = color;
     }
 
-    public String getPaintingEvent() {
-        return paintingEvent;
+    public Event getEvent() {
+        return event;
     }
 
-    public void setPaintingEvent(String paintingEvent) {
-        this.paintingEvent = paintingEvent;
+    public void setEvent(Event event) {
+        this.event = event;
     }
 
     public DrawType getDrawType() {
