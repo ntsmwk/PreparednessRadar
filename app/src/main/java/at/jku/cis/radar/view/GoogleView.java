@@ -28,6 +28,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 import at.jku.cis.radar.command.AddFeatureCommand;
 import at.jku.cis.radar.command.AddGeometryEditCommand;
@@ -42,6 +43,7 @@ import at.jku.cis.radar.model.PenSetting;
 import at.jku.cis.radar.service.GeoJsonFeatureBuilder;
 import at.jku.cis.radar.service.GeoJsonGeometryBuilder;
 import at.jku.cis.radar.service.GeoJsonIntersectionRemover;
+import at.jku.cis.radar.task.GetFeaturesTask;
 import at.jku.cis.radar.transformer.GeoJsonGeometry2GeometryTransformer;
 
 
@@ -55,7 +57,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
     private GeoJsonGeometryBuilder geoJsonGeometryBuilder;
 
-    private Map<String, GeoJsonLayer> geoJsonLayers = new HashMap<>();
+    private Map<Event, GeoJsonLayer> geoJsonLayers = new HashMap<>();
 
     public GoogleView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -83,7 +85,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
     @Override
     public void handleEventVisibleChanged(Event event) {
-        GeoJsonLayer geoJsonLayer = findGeoJsonLayerByEventName(event.getName());
+        GeoJsonLayer geoJsonLayer = findGeoJsonLayerByEvent(event);
         if (event.isVisible()) {
             geoJsonLayer.addLayerToMap();
         } else {
@@ -93,7 +95,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
     @Override
     public void handleEventSelectionChanged(Event event) {
-        GeoJsonLayer geoJsonLayer = findGeoJsonLayerByEventName(event.getName());
+        GeoJsonLayer geoJsonLayer = findGeoJsonLayerByEvent(event);
         if (event.isSelected()) {
             geoJsonLayer.addLayerToMap();
         }
@@ -114,10 +116,18 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         return geoJsonLayer;
     }
 
+    private JSONObject loadFeatures(Event event) {
+        try {
+            return new GetFeaturesTask().execute(event.getId()).get();
+        } catch (InterruptedException | ExecutionException e) {
+            return new JSONObject();
+        }
+    }
+
     @Override
     public boolean dispatchTouchEvent(@NonNull MotionEvent motionEvent) {
         if (googleMap != null) {
-            if (paintingEnabled &&motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS && penSetting.getPaintingEvent() != null ) {
+            if (paintingEnabled && motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS && penSetting.getEvent() != null) {
                 dispatchStylusTouchEvent(motionEvent);
             } else if(motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_FINGER){
                 super.dispatchTouchEvent(motionEvent);
