@@ -45,7 +45,7 @@ public class GeoJsonIntersectionRemover {
                 geometries = intersectionGeometries(geometryToIntersection, geometries);
             }
             if (!geometries.isEmpty()) {
-                addList.add(transformToGeoJsonFeature(geometries, feature.getPolygonStyle().getFillColor()));
+                addList.add(transformToGeoJsonFeature(geometries, feature.getPolygonStyle().getFillColor(), feature.getId()));
             }
             removeList.add(feature);
         }
@@ -78,10 +78,10 @@ public class GeoJsonIntersectionRemover {
         return CollectionUtils.collect(geometry.getGeometries(), new GeoJsonGeometry2GeometryTransformer());
     }
 
-    private GeoJsonFeature transformToGeoJsonFeature(Collection<Geometry> geometries, int color) {
+    private GeoJsonFeature transformToGeoJsonFeature(Collection<Geometry> geometries, int color, String id) {
         Collection<GeoJsonGeometry> geoJsonGeometries = CollectionUtils.collect(geometries, new Geometry2GeoJsonGeometryTransformer());
         GeoJsonGeometryCollection geoJsonGeometryCollection = new GeoJsonGeometryCollection(new ArrayList<>(geoJsonGeometries));
-        return new GeoJsonFeatureBuilder(geoJsonGeometryCollection).setColor(color).build();
+        return new GeoJsonFeatureBuilder(geoJsonGeometryCollection).setColor(color).build(id);
     }
 
     private List<Geometry> transformToGeometries(GeoJsonGeometry geoJsonEraseGeometry) {

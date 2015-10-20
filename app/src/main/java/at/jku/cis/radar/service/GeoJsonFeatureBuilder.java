@@ -22,11 +22,12 @@ public class GeoJsonFeatureBuilder {
         return this;
     }
 
-    public GeoJsonFeature build() {
-        GeoJsonFeature geoJsonFeature = new GeoJsonFeature(geoJsonGeometryCollection, "id", null, null);
+    public GeoJsonFeature build(String id) {
+        GeoJsonFeature geoJsonFeature = new GeoJsonFeature(geoJsonGeometryCollection, id, null, null);
         geoJsonFeature.setPointStyle(createPointStyle());
         geoJsonFeature.setLineStringStyle(createLineStringStyle());
         geoJsonFeature.setPolygonStyle(createPolygonStyle());
+
         return geoJsonFeature;
     }
 

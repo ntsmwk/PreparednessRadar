@@ -10,4 +10,6 @@
     <string name="polygon">Polygon</string>
     <string name="edit">Edit</string>
     <string name="noEdit">Create</string>
+    <string name="evolve">Evolve</string>
+    <string name="noEvolve">Create</string>
 </resources>

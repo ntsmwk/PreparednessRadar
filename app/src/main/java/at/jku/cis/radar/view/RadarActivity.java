@@ -120,7 +120,8 @@ public class RadarActivity extends AppCompatActivity implements
             public boolean onMenuItemClick(MenuItem item) {
                 PenSetting penSetting = findGoogleView().getPenSetting();
                 deactivateDrawMenuItems(menu);
-                item.setIcon(R.drawable.polygon_icon_activated);
+                //item.setIcon(R.drawable.polygon_icon_activated);
+                item.setIcon(R.drawable.polygonselected);
                 menu.findItem(R.id.erase).setIcon(R.drawable.pen_icon);
 
                 penSetting.setPenMode(PenMode.DRAWING);
@@ -136,7 +137,8 @@ public class RadarActivity extends AppCompatActivity implements
             public boolean onMenuItemClick(MenuItem item) {
                 PenSetting penSetting = findGoogleView().getPenSetting();
                 deactivateDrawMenuItems(menu);
-                item.setIcon(R.drawable.marker_icon_activated);
+                //item.setIcon(R.drawable.marker_icon_activated);
+                item.setIcon(R.drawable.markerselected);
                 menu.findItem(R.id.erase).setIcon(R.drawable.pen_icon);
                 penSetting.setPenMode(PenMode.DRAWING);
                 penSetting.setDrawType(DrawType.MARKER);
@@ -157,7 +159,7 @@ public class RadarActivity extends AppCompatActivity implements
                 } else {
                     menu.findItem(R.id.edit).setTitle(R.string.noEdit);
                     setSidebarDisabled(false, ALPHA_VISIBLE, Color.WHITE);
-                    if(googleView.getCurrentEditingFeature() != null) {
+                    if (googleView.getCurrentEditingFeature() != null) {
                         GeometryUtils.setNotEditableFeature(googleView.getCurrentEditingFeature());
                         googleView.setCurrentEditingFeature(null);
                     }
@@ -168,16 +170,21 @@ public class RadarActivity extends AppCompatActivity implements
         });
     }
 
+
+
     private void setSidebarDisabled(boolean disabled, float alpha, int gray) {
         ((EventTreeFragment) getFragmentManager().findFragmentById(R.id.SidebarLayout)).setDisabled(disabled);
         findViewById(R.id.SidebarLayout).setAlpha(alpha);
         findViewById(R.id.SidebarLayout).setBackgroundColor(gray);
     }
 
-    private void deactivateDrawMenuItems(Menu menu){
-        menu.findItem(R.id.polygon).setIcon(R.drawable.polygon_icon);
+    private void deactivateDrawMenuItems(Menu menu) {
+        //menu.findItem(R.id.polygon).setIcon(R.drawable.polygon_icon);
+        menu.findItem(R.id.polygon).setIcon(R.drawable.polygonnotselected);
+
         menu.findItem(R.id.line).setIcon(R.drawable.line_icon);
-        menu.findItem(R.id.marker).setIcon(R.drawable.marker_icon);
+        //menu.findItem(R.id.marker).setIcon(R.drawable.marker_icon);
+        menu.findItem(R.id.marker).setIcon(R.drawable.markernotselected);
     }
 
     private GoogleApiClient buildGoogleApiClient() {

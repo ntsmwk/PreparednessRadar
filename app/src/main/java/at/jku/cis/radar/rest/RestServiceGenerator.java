@@ -5,7 +5,7 @@ import retrofit.RestAdapter;
 
 public class RestServiceGenerator {
 
-    private static final String BASE_URL = "http://10.0.0.36:8080/rest";
+    private static final String BASE_URL = "http://192.168.43.48:8080/rest";
 
     public static <S> S createService(Class<S> serviceClass) {
         RestAdapter.Builder builder = new RestAdapter.Builder();

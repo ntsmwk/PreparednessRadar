@@ -55,6 +55,7 @@ public class GeometryUtils {
         Geometry geometry;
         GeometryCollection collection = geometryCollection;
         int unionTries = 0;
+
         do {
             try {
                 geometry = collection.union();
@@ -76,9 +77,7 @@ public class GeometryUtils {
             unionTries++;
         } while (selfIntersection(collection) && unionTries < MAX_UNION_TRIES);
         return collection;
-
     }
-
 
     private static boolean selfIntersection(GeometryCollection geometryCollection) {
         for (int i = 0; i < geometryCollection.getNumGeometries(); i++) {
