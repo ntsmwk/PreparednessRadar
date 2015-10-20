@@ -243,13 +243,13 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
             @Override
             public void success(Object o, Response response) {
                 createNewGeoJsonFeatureWithCorrectID(o, geoJsonFeature);
-                Toast.makeText(getContext(), "Features is saved", Toast.LENGTH_LONG).show();
+                Toast.makeText(getContext(), "Feature is saved", Toast.LENGTH_LONG).show();
             }
 
             @Override
             public void failure(RetrofitError error) {
                 Log.e(TAG, "Could not save feature", error);
-                Toast.makeText(getContext(), "Features is not saved", Toast.LENGTH_LONG).show();
+                Toast.makeText(getContext(), "Feature is not saved", Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -288,13 +288,13 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
             @Override
             public void success(Object o, Response response) {
-                Toast.makeText(getContext(), "Features is edited", Toast.LENGTH_LONG).show();
+                Toast.makeText(getContext(), "Feature is edited", Toast.LENGTH_LONG).show();
             }
 
             @Override
             public void failure(RetrofitError error) {
                 Log.e(TAG, "Could not save feature", error);
-                Toast.makeText(getContext(), "Features is not edited", Toast.LENGTH_LONG).show();
+                Toast.makeText(getContext(), "Feature is not edited", Toast.LENGTH_LONG).show();
             }
         });
     }
@@ -303,8 +303,8 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         GeoJsonIntersectionRemover geoJsonIntersectionRemover = new GeoJsonIntersectionRemover(geoJsonLayer.getFeatures(), geoJsonGeometry.getGeometries().get(0));
         geoJsonIntersectionRemover.intersectGeoJsonFeatures();
         new RemoveFeatureCommand(getCorrespondingGeoJsonLayer(), geoJsonIntersectionRemover.getAddList(), geoJsonIntersectionRemover.getRemoveList()).doCommand();
-        for(GeoJsonFeature geoJsonFeature : geoJsonIntersectionRemover.getRemoveList()){
-
+        for(GeoJsonFeature geoJsonFeature : geoJsonIntersectionRemover.getAddList()){
+            saveEditedFeature(geoJsonFeature);
         }
     }
 
