@@ -17,7 +17,6 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 
 import at.jku.cis.radar.R;
 import at.jku.cis.radar.model.Event;
@@ -25,7 +24,6 @@ import at.jku.cis.radar.task.GetEventsTask;
 
 public class EventTreeFragment extends Fragment implements ExpandableListView.OnChildClickListener {
 
-    private static final String EVENT_TREE_XML = "eventTree.xml";
     private static final String TAG = "EventTree";
 
     private List<Event> events = new ArrayList<>();
@@ -37,7 +35,6 @@ public class EventTreeFragment extends Fragment implements ExpandableListView.On
     @Override
     public View onCreateView(final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_selectable_nodes, container, false);
-        //events = parseEvents(inflater);
         expandableListView = (ExpandableListView) rootView.findViewById(R.id.lvExp);
         expandableListView.setOnChildClickListener(this);
         expandableListView.setAdapter(new EventExpandableListAdapter());
@@ -49,7 +46,7 @@ public class EventTreeFragment extends Fragment implements ExpandableListView.On
         super.onStart();
         try {
             events = new GetEventsTask().execute().get();
-        } catch (InterruptedException | ExecutionException e) {
+        } catch (Exception e) {
             Log.e(TAG, "Could not load events", e);
         }
     }
