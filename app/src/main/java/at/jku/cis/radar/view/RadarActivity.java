@@ -18,7 +18,6 @@ import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.MapFragment;
 
 import at.jku.cis.radar.R;
-import at.jku.cis.radar.geometry.GeometryUtils;
 import at.jku.cis.radar.model.ApplicationMode;
 import at.jku.cis.radar.model.DrawType;
 import at.jku.cis.radar.model.PenMode;
@@ -47,11 +46,12 @@ public class RadarActivity extends AppCompatActivity implements
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         getMenuInflater().inflate(R.menu.main_menu, menu);
-        setEraserMenuClickListener(menu);
+        setPenModeMenuClickListener(menu);
         setLineMenuClickListener(menu);
         setPolygonMenuClickListener(menu);
         setMarkerMenuClickListener(menu);
         setEditMenuClickListener(menu);
+        setEvolveMenuClickListener(menu);
         return true;
     }
 
@@ -81,7 +81,7 @@ public class RadarActivity extends AppCompatActivity implements
         return (GoogleView) findViewById(R.id.MapLayout);
     }
 
-    private void setEraserMenuClickListener(Menu menu) {
+    private void setPenModeMenuClickListener(Menu menu) {
         menu.findItem(R.id.erase).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem menuItem) {
@@ -152,30 +152,50 @@ public class RadarActivity extends AppCompatActivity implements
             @Override
             public boolean onMenuItemClick(MenuItem item) {
                 GoogleView googleView = findGoogleView();
-                if (ApplicationMode.PAINTING == googleView.getApplicationMode()) {
+                if (ApplicationMode.PAINT == googleView.getApplicationMode()) {
                     menu.findItem(R.id.edit).setTitle(R.string.edit);
-                    setSidebarDisabled(true, ALPHA_HIDDEN, Color.GRAY);
-                    googleView.setApplicationMode(ApplicationMode.EDITING);
+                    disableEventTreeFragement();
+                    googleView.handleApplicationModeChanged(ApplicationMode.EDIT);
                 } else {
                     menu.findItem(R.id.edit).setTitle(R.string.noEdit);
-                    setSidebarDisabled(false, ALPHA_VISIBLE, Color.WHITE);
-                    if (googleView.getCurrentEditingFeature() != null) {
-                        GeometryUtils.setNotEditableFeature(googleView.getCurrentEditingFeature());
-                        googleView.setCurrentEditingFeature(null);
-                    }
-                    googleView.setApplicationMode(ApplicationMode.PAINTING);
+                    enableEventTreeFragement();
+                    googleView.handleApplicationModeChanged(ApplicationMode.PAINT);
                 }
                 return true;
             }
         });
     }
 
+    private void setEvolveMenuClickListener(final Menu menu) {
+        menu.findItem(R.id.evolve).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                GoogleView googleView = findGoogleView();
+                if (ApplicationMode.PAINT == googleView.getApplicationMode()) {
+                    menu.findItem(R.id.evolve).setTitle(R.string.evolve);
+                    disableEventTreeFragement();
+                    googleView.handleApplicationModeChanged(ApplicationMode.EVOLE);
+                } else {
+                    enableEventTreeFragement();
+                    menu.findItem(R.id.evolve).setTitle(R.string.noEdit);
+                    googleView.handleApplicationModeChanged(ApplicationMode.PAINT);
+                }
+                return true;
+            }
+        });
+    }
+
+    private void enableEventTreeFragement() {
+        ((EventTreeFragment) getFragmentManager().findFragmentById(R.id.SidebarLayout)).setDisabled(false);
+        findViewById(R.id.SidebarLayout).setAlpha(ALPHA_VISIBLE);
+        findViewById(R.id.SidebarLayout).setBackgroundColor(Color.WHITE);
+    }
 
 
-    private void setSidebarDisabled(boolean disabled, float alpha, int gray) {
-        ((EventTreeFragment) getFragmentManager().findFragmentById(R.id.SidebarLayout)).setDisabled(disabled);
-        findViewById(R.id.SidebarLayout).setAlpha(alpha);
-        findViewById(R.id.SidebarLayout).setBackgroundColor(gray);
+    private void disableEventTreeFragement() {
+        ((EventTreeFragment) getFragmentManager().findFragmentById(R.id.SidebarLayout)).setDisabled(true);
+        findViewById(R.id.SidebarLayout).setAlpha(ALPHA_HIDDEN);
+        findViewById(R.id.SidebarLayout).setBackgroundColor(Color.GRAY);
     }
 
     private void deactivateDrawMenuItems(Menu menu) {

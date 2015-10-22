@@ -3,10 +3,10 @@ package at.jku.cis.radar.model;
 import android.graphics.Color;
 
 public class PenSetting {
+    private Event event;
+    private int color = Color.BLACK;
     private PenMode penMode = PenMode.DRAWING;
     private DrawType drawType = DrawType.POLYGON;
-    private int color = Color.BLACK;
-    private Event event;
 
     public PenMode getPenMode() {
         return penMode;

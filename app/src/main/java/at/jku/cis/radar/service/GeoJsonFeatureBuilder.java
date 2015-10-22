@@ -1,17 +1,20 @@
 package at.jku.cis.radar.service;
 
-import android.graphics.Color;
-
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
-import com.google.maps.android.geojson.GeoJsonFeature;
+import com.google.maps.android.geojson.GeoJsonGeometry;
 import com.google.maps.android.geojson.GeoJsonGeometryCollection;
-import com.google.maps.android.geojson.GeoJsonLineStringStyle;
-import com.google.maps.android.geojson.GeoJsonPointStyle;
-import com.google.maps.android.geojson.GeoJsonPolygonStyle;
+
+import java.util.ArrayList;
+
+import at.jku.cis.radar.model.MyGeoJsonFeature;
 
 public class GeoJsonFeatureBuilder {
+    private String id;
     private int color;
     private GeoJsonGeometryCollection geoJsonGeometryCollection;
+
+    public GeoJsonFeatureBuilder() {
+        this(new GeoJsonGeometryCollection(new ArrayList<GeoJsonGeometry>()));
+    }
 
     public GeoJsonFeatureBuilder(GeoJsonGeometryCollection geoJsonGeometryCollection) {
         this.geoJsonGeometryCollection = geoJsonGeometryCollection;
@@ -22,38 +25,12 @@ public class GeoJsonFeatureBuilder {
         return this;
     }
 
-    public GeoJsonFeature build(String id) {
-        GeoJsonFeature geoJsonFeature = new GeoJsonFeature(geoJsonGeometryCollection, id, null, null);
-        geoJsonFeature.setPointStyle(createPointStyle());
-        geoJsonFeature.setLineStringStyle(createLineStringStyle());
-        geoJsonFeature.setPolygonStyle(createPolygonStyle());
-
-        return geoJsonFeature;
+    public MyGeoJsonFeature build() {
+        return new MyGeoJsonFeature(geoJsonGeometryCollection, id, null, null);
     }
 
-    private GeoJsonPointStyle createPointStyle() {
-        GeoJsonPointStyle pointStyle = new GeoJsonPointStyle();
-        pointStyle.setIcon(BitmapDescriptorFactory
-                .defaultMarker(convertToHSV()[0]));
-        return pointStyle;
-    }
-
-    private GeoJsonPolygonStyle createPolygonStyle() {
-        GeoJsonPolygonStyle polygonStyle = new GeoJsonPolygonStyle();
-        polygonStyle.setFillColor(color);
-        polygonStyle.setStrokeColor(color);
-        return polygonStyle;
-    }
-
-    private GeoJsonLineStringStyle createLineStringStyle() {
-        GeoJsonLineStringStyle lineStringStyle = new GeoJsonLineStringStyle();
-        lineStringStyle.setColor(color);
-        return lineStringStyle;
-    }
-
-    private float[] convertToHSV() {
-        float[] hsv = new float[3];
-        Color.colorToHSV(color, hsv);
-        return hsv;
+    public GeoJsonFeatureBuilder setId(String id) {
+        this.id = id;
+        return this;
     }
 }

@@ -81,7 +81,7 @@ public class GeoJsonIntersectionRemover {
     private GeoJsonFeature transformToGeoJsonFeature(Collection<Geometry> geometries, int color, String id) {
         Collection<GeoJsonGeometry> geoJsonGeometries = CollectionUtils.collect(geometries, new Geometry2GeoJsonGeometryTransformer());
         GeoJsonGeometryCollection geoJsonGeometryCollection = new GeoJsonGeometryCollection(new ArrayList<>(geoJsonGeometries));
-        return new GeoJsonFeatureBuilder(geoJsonGeometryCollection).setColor(color).build(id);
+        return new GeoJsonFeatureBuilder(geoJsonGeometryCollection).setId(id).setColor(color).build();
     }
 
     private List<Geometry> transformToGeometries(GeoJsonGeometry geoJsonEraseGeometry) {

@@ -1,8 +1,5 @@
 package at.jku.cis.radar.geometry;
 
-import android.graphics.Color;
-
-import com.google.maps.android.geojson.GeoJsonFeature;
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryCollection;
@@ -20,36 +17,8 @@ import at.jku.cis.radar.service.PolygonRepairerService;
 
 
 public class GeometryUtils {
-    private final static float EDIT_LINE_WIDTH = 10;
-    private final static float NORMAL_LINE_WIDTH = 10;
-    private final static int EDIT_COLOR = Color.WHITE;
     private final static int MAX_UNION_TRIES = 10;
 
-
-    public static void setEditableFeature(GeoJsonFeature feature) {
-        feature.getPolygonStyle().setStrokeColor(EDIT_COLOR);
-        feature.getPolygonStyle().setStrokeWidth(EDIT_LINE_WIDTH);
-        feature.getLineStringStyle().setColor(EDIT_COLOR);
-        feature.getLineStringStyle().setWidth(EDIT_LINE_WIDTH);
-        //TODO POINTS
-    }
-
-    public static void setNotEditableFeature(GeoJsonFeature feature) {
-        feature.getPolygonStyle().setStrokeColor(feature.getPolygonStyle().getFillColor());
-        feature.getPolygonStyle().setStrokeWidth(NORMAL_LINE_WIDTH);
-        feature.getLineStringStyle().setColor(feature.getPolygonStyle().getFillColor());
-        feature.getLineStringStyle().setWidth(NORMAL_LINE_WIDTH);
-        //TODO POINTS
-    }
-
-    public static boolean intersects(GeometryCollection geometryCollection, Geometry intersectionGeometry) {
-        for (int i = 0; i < geometryCollection.getNumGeometries(); i++) {
-            if (geometryCollection.getGeometryN(i).intersects(intersectionGeometry)) {
-                return true;
-            }
-        }
-        return false;
-    }
 
     public static GeometryCollection union(GeometryCollection geometryCollection) {
         Geometry geometry;
