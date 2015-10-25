@@ -52,6 +52,7 @@ public class RadarActivity extends AppCompatActivity implements
         setPolygonMenuClickListener(menu);
         setMarkerMenuClickListener(menu);
         setEditMenuClickListener(menu);
+        setEvolveMenuClickListener(menu);
         return true;
     }
 
@@ -156,7 +157,7 @@ public class RadarActivity extends AppCompatActivity implements
                     menu.findItem(R.id.edit).setTitle(R.string.edit);
                     setSidebarDisabled(true, ALPHA_HIDDEN, Color.GRAY);
                     googleView.setApplicationMode(ApplicationMode.EDITING);
-                } else {
+                } else if(ApplicationMode.EDITING == googleView.getApplicationMode()){
                     menu.findItem(R.id.edit).setTitle(R.string.noEdit);
                     setSidebarDisabled(false, ALPHA_VISIBLE, Color.WHITE);
                     if (googleView.getCurrentEditingFeature() != null) {
@@ -165,6 +166,31 @@ public class RadarActivity extends AppCompatActivity implements
                     }
                     googleView.setApplicationMode(ApplicationMode.PAINTING);
                 }
+                //TODO set away from EvoMode!
+                return true;
+            }
+        });
+    }
+
+    private void setEvolveMenuClickListener(final Menu menu) {
+        menu.findItem(R.id.evolve).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                GoogleView googleView = findGoogleView();
+                if (ApplicationMode.PAINTING == googleView.getApplicationMode()) {
+                    menu.findItem(R.id.evolve).setTitle(R.string.evolve);
+                    setSidebarDisabled(true, ALPHA_HIDDEN, Color.GRAY);
+                    googleView.setApplicationMode(ApplicationMode.EVOLVING);
+                } else if(ApplicationMode.EVOLVING == googleView.getApplicationMode()){
+                    menu.findItem(R.id.edit).setTitle(R.string.noEvolve);
+                    setSidebarDisabled(false, ALPHA_VISIBLE, Color.WHITE);
+                    if (googleView.getCurrentEditingFeature() != null) {
+                        GeometryUtils.setNotEditableFeature(googleView.getCurrentEditingFeature());
+                        googleView.setCurrentEditingFeature(null);
+                    }
+                    googleView.setApplicationMode(ApplicationMode.PAINTING);
+                }
+                //TODO set away from EditMode!
                 return true;
             }
         });
