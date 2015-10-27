@@ -7,6 +7,8 @@ public class RestServiceGenerator {
 
     private static final String BASE_URL = "http://10.0.0.13:8080/rest";
 
+    private static final String TAG = RestServiceGenerator.class.getName();
+
     public static <S> S createService(Class<S> serviceClass) {
         RestAdapter.Builder builder = new RestAdapter.Builder();
         builder.setEndpoint(BASE_URL);

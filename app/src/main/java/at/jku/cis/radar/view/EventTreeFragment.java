@@ -4,8 +4,8 @@ import android.app.Fragment;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,6 +17,9 @@ import android.widget.TextView;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import at.jku.cis.radar.R;
 import at.jku.cis.radar.model.Event;
@@ -45,9 +48,21 @@ public class EventTreeFragment extends Fragment implements ExpandableListView.On
     public void onStart() {
         super.onStart();
         try {
-            events = new GetEventsTask().execute().get();
-        } catch (Exception e) {
-            Log.e(TAG, "Could not load events", e);
+            ExecutorService executorService = Executors.newCachedThreadPool();
+            events = new GetEventsTask().executeOnExecutor(executorService).get();
+            for (Event event : events) {
+                new AsyncTask<Event, Void, Void>() {
+
+                    @Override
+                    protected Void doInBackground(Event... event) {
+                        for (EventClickListener eventClickListener : eventClickListeners) {
+                            eventClickListener.handleEventLoaded(event[0]);
+                        }
+                        return null;
+                    }
+                }.executeOnExecutor(executorService).get();
+            }
+        } catch (InterruptedException | ExecutionException e) {
         }
     }
 
@@ -83,6 +98,8 @@ public class EventTreeFragment extends Fragment implements ExpandableListView.On
     }
 
     public interface EventClickListener {
+        void handleEventLoaded(Event event);
+
         void handleEventVisibleChanged(Event event);
 
         void handleEventSelectionChanged(Event event);
