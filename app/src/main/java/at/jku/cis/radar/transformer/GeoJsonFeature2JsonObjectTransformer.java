@@ -138,8 +138,8 @@ public class GeoJsonFeature2JsonObjectTransformer implements Transformer<GeoJson
 
     private JSONArray transformCoordinate(LatLng latLng) throws JSONException {
         JSONArray jsonArray = new JSONArray();
-        jsonArray.put(latLng.latitude);
         jsonArray.put(latLng.longitude);
+        jsonArray.put(latLng.latitude);
         return jsonArray;
     }
 }

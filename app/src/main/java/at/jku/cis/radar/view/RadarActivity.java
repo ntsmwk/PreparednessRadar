@@ -138,7 +138,6 @@ public class RadarActivity extends AppCompatActivity implements
             public boolean onMenuItemClick(MenuItem item) {
                 PenSetting penSetting = findGoogleView().getPenSetting();
                 deactivateDrawMenuItems(menu);
-                //item.setIcon(R.drawable.marker_icon_activated);
                 item.setIcon(R.drawable.markerselected);
                 menu.findItem(R.id.erase).setIcon(R.drawable.pen_icon);
                 penSetting.setPenMode(PenMode.DRAWING);
@@ -182,7 +181,7 @@ public class RadarActivity extends AppCompatActivity implements
                     setSidebarDisabled(true, ALPHA_HIDDEN, Color.GRAY);
                     googleView.setApplicationMode(ApplicationMode.EVOLVING);
                 } else if(ApplicationMode.EVOLVING == googleView.getApplicationMode()){
-                    menu.findItem(R.id.edit).setTitle(R.string.noEvolve);
+                    menu.findItem(R.id.evolve).setTitle(R.string.noEvolve);
                     setSidebarDisabled(false, ALPHA_VISIBLE, Color.WHITE);
                     if (googleView.getCurrentEditingFeature() != null) {
                         GeometryUtils.setNotEditableFeature(googleView.getCurrentEditingFeature());
