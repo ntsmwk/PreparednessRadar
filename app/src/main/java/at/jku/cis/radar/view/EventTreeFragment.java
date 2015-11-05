@@ -4,9 +4,7 @@ import android.app.Fragment;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
-import android.os.AsyncTask;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -19,6 +17,8 @@ import android.widget.TextView;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import at.jku.cis.radar.R;
 import at.jku.cis.radar.model.Event;
@@ -49,9 +49,22 @@ public class EventTreeFragment extends Fragment implements ExpandableListView.On
     public void onStart() {
         super.onStart();
         try {
-            events = new GetEventsTask().execute().get();
+            ExecutorService executorService = Executors.newCachedThreadPool();
+            events = new GetEventsTask().executeOnExecutor(executorService).get();
+            //for (final Event event : events) {
+            //    new AsyncTask<Void, Void, Void>() {
+            //
+            //        @Override
+            //        protected Void doInBackground(Void... _void) {
+            //            System.out.println("Task: " + event.getName());
+            //            for (EventClickListener eventClickListener : eventClickListeners) {
+            //                eventClickListener.handleEventLoaded(event);
+            //            }
+            //            return null;
+            //        }
+            //    }.executeOnExecutor(executorService).get(10, TimeUnit.SECONDS);
+            //}
         } catch (InterruptedException | ExecutionException e) {
-            Log.e(TAG, "Could not load events", e);
         }
     }
 
@@ -86,16 +99,16 @@ public class EventTreeFragment extends Fragment implements ExpandableListView.On
         }
     }
 
+    public void setDisabled(boolean disabled) {
+        this.disabled = disabled;
+    }
+
     public interface EventClickListener {
         void handleEventLoaded(Event event);
 
         void handleEventVisibleChanged(Event event);
 
         void handleEventSelectionChanged(Event event);
-    }
-
-    public void setDisabled(boolean disabled) {
-        this.disabled = disabled;
     }
 
     private class EventExpandableListAdapter extends BaseExpandableListAdapter {

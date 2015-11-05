@@ -127,8 +127,15 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     }
 
     private GeoJsonLayer findGeoJsonLayerByEvent(Event event) {
-        loadAllFeatures(event);
         GeoJsonLayer geoJsonLayer = geoJsonLayers.get(event);
+        if (geoJsonLayer == null) {
+            JSONObject jsonObject = loadFeatures(event);
+            geoJsonLayer = new GeoJsonLayer(googleMap, jsonObject);
+            geoJsonLayer.getDefaultPolygonStyle().setFillColor(event.getColor());
+            geoJsonLayer.getDefaultPolygonStyle().setStrokeColor(event.getColor());
+            geoJsonLayer.getDefaultLineStringStyle().setColor(event.getColor());
+            geoJsonLayers.put(event, geoJsonLayer);
+        }
         return geoJsonLayer;
     }
 
@@ -339,18 +346,6 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
             }
         });
 
-    }
-
-    private void loadAllFeatures(Event event) {
-        GeoJsonLayer geoJsonLayer = geoJsonLayers.get(event);
-        if (geoJsonLayer == null) {
-            JSONObject jsonObject = loadFeatures(event);
-            geoJsonLayer = new GeoJsonLayer(googleMap, jsonObject);
-            geoJsonLayer.getDefaultPolygonStyle().setFillColor(event.getColor());
-            geoJsonLayer.getDefaultPolygonStyle().setStrokeColor(event.getColor());
-            geoJsonLayer.getDefaultLineStringStyle().setColor(event.getColor());
-            geoJsonLayers.put(event, geoJsonLayer);
-        }
     }
 
     private JSONObject loadFeatures(Event event) {
