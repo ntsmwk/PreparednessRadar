@@ -4,6 +4,7 @@ import android.app.Fragment;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -86,6 +87,8 @@ public class EventTreeFragment extends Fragment implements ExpandableListView.On
     }
 
     public interface EventClickListener {
+        void handleEventLoaded(Event event);
+
         void handleEventVisibleChanged(Event event);
 
         void handleEventSelectionChanged(Event event);

@@ -96,6 +96,16 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     }
 
     @Override
+    public void handleEventLoaded(Event event) {
+        GeoJsonLayer geoJsonLayer = findGeoJsonLayerByEvent(event);
+        if (event.isVisible()) {
+            geoJsonLayer.addLayerToMap();
+        } else {
+            geoJsonLayer.removeLayerFromMap();
+        }
+    }
+
+    @Override
     public void handleEventVisibleChanged(Event event) {
         GeoJsonLayer geoJsonLayer = findGeoJsonLayerByEvent(event);
         if (event.isVisible()) {
