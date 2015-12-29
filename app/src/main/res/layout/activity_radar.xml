@@ -5,17 +5,18 @@
     android:orientation="horizontal"
     tools:context=".RadarActivity">
 
-    <LinearLayout android:id="@+id/SidebarLayout"
-        android:orientation="horizontal"
+    <LinearLayout
+        android:id="@+id/sidebarLayout"
         android:layout_width="0dp"
+        android:layout_height="match_parent"
         android:layout_weight="0.17"
-        android:layout_height="match_parent"></LinearLayout>
+        android:orientation="horizontal"></LinearLayout>
 
     <at.jku.cis.radar.view.GoogleView
-        android:id="@+id/MapLayout"
-        android:layout_height="match_parent"
+        android:id="@+id/mapView"
         android:layout_width="0dp"
+        android:layout_height="match_parent"
         android:layout_weight="0.83"
         android:orientation="horizontal"></at.jku.cis.radar.view.GoogleView>
-       >
+    >
 </LinearLayout>

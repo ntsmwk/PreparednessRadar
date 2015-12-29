@@ -1,11 +1,13 @@
 package at.jku.cis.radar.view;
 
+import android.app.Activity;
 import android.content.Context;
 import android.graphics.Point;
 import android.location.Location;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.util.Log;
+import android.view.ContextMenu;
 import android.view.MotionEvent;
 import android.widget.Toast;
 
@@ -57,7 +59,7 @@ import retrofit.RetrofitError;
 import retrofit.client.Response;
 
 
-public class GoogleView extends MapView implements OnMapReadyCallback, EventTreeFragment.EventClickListener {
+public class GoogleView extends MapView implements OnMapReadyCallback, EventTreeFragment.EventClickListener, GoogleMap.OnMapLongClickListener {
     private final String TAG = "GoogleView";
 
     private GoogleMap googleMap;
@@ -80,7 +82,27 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         this.googleMap = googleMap;
         this.googleMap.setMyLocationEnabled(true);
         this.googleMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
+        this.googleMap.setOnMapLongClickListener(this);
         this.googleMap.getUiSettings().setMyLocationButtonEnabled(true);
+    }
+
+    @Override
+    public void onMapLongClick(LatLng latLng) {
+        showContextMenu();
+    }
+
+    @Override
+    protected void onCreateContextMenu(ContextMenu menu) {
+        super.onCreateContextMenu(menu);
+        menu.setHeaderTitle("Context Menu");
+        menu.add(0, getId(), 0, "Action 1");
+        menu.add(0, getId(), 0, "Action 2");
+        menu.add(0, getId(), 0, "Action 3");
+        getActivity().registerForContextMenu(this);
+    }
+
+    public Activity getActivity() {
+        return (Activity) getContext();
     }
 
     public ApplicationMode getApplicationMode() {
