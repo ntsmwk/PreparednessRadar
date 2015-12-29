@@ -1,8 +1,9 @@
 package at.jku.cis.radar.model;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class Event {
+public class Event implements Serializable {
     private long id;
     private String name;
     private int color;

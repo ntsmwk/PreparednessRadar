@@ -139,9 +139,9 @@ public class RadarActivity extends AppCompatActivity {
                 } else if (ApplicationMode.EDITING == googleView.getApplicationMode()) {
                     menu.findItem(R.id.edit).setTitle(R.string.noEdit);
                     setSidebarDisabled(false, ALPHA_VISIBLE, Color.WHITE);
-                    if (googleView.getCurrentEditingFeature() != null) {
-                        GeometryUtils.setNotEditableFeature(googleView.getCurrentEditingFeature());
-                        googleView.setCurrentEditingFeature(null);
+                    if (googleView.getCurrentFeature() != null) {
+                        GeometryUtils.setNotEditableFeature(googleView.getCurrentFeature());
+                        googleView.setCurrentFeature(null);
                     }
                     googleView.setApplicationMode(ApplicationMode.PAINTING);
                 }
@@ -163,9 +163,9 @@ public class RadarActivity extends AppCompatActivity {
                 } else if (ApplicationMode.EVOLVING == googleView.getApplicationMode()) {
                     menu.findItem(R.id.evolve).setTitle(R.string.noEvolve);
                     setSidebarDisabled(false, ALPHA_VISIBLE, Color.WHITE);
-                    if (googleView.getCurrentEditingFeature() != null) {
-                        GeometryUtils.setNotEditableFeature(googleView.getCurrentEditingFeature());
-                        googleView.setCurrentEditingFeature(null);
+                    if (googleView.getCurrentFeature() != null) {
+                        GeometryUtils.setNotEditableFeature(googleView.getCurrentFeature());
+                        googleView.setCurrentFeature(null);
                     }
                     googleView.setApplicationMode(ApplicationMode.PAINTING);
                 }

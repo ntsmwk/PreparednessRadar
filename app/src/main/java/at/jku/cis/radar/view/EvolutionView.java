@@ -22,8 +22,8 @@ public class EvolutionView extends MapView implements OnMapReadyCallback {
     private GeoJsonLayer geoJsonLayer;
     private GoogleMap googleMap;
 
-    private long featureGroup;
     private Event event;
+    private long featureId;
 
     public EvolutionView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -31,11 +31,9 @@ public class EvolutionView extends MapView implements OnMapReadyCallback {
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
-        System.out.println("GoogleMap.onMapReady");
         this.googleMap = googleMap;
         this.googleMap.setMyLocationEnabled(true);
         this.googleMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
-        this.googleMap.getUiSettings().setMyLocationButtonEnabled(true);
         this.geoJsonLayer = new GeoJsonLayer(googleMap, new JSONObject());
         this.geoJsonLayer.addLayerToMap();
 
@@ -47,14 +45,14 @@ public class EvolutionView extends MapView implements OnMapReadyCallback {
 
     private List<GeoJsonFeature> loadGeoJsonFeatures() {
         try {
-            return new GetFeaturesEvolutionTask().execute(event.getId(), featureGroup).get();
+            return new GetFeaturesEvolutionTask().execute(event.getId(), featureId).get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public void handleFeatureGroupVisible(final Event event, final long featureGroup) {
+    public void handleFeatureGroupVisible(final Event event, final long featureId) {
         this.event = event;
-        this.featureGroup = featureGroup;
+        this.featureId = featureId;
     }
 }

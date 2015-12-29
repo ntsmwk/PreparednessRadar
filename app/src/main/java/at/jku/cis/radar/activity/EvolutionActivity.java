@@ -1,7 +1,6 @@
 package at.jku.cis.radar.activity;
 
 import android.app.FragmentTransaction;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 
@@ -21,18 +20,15 @@ public class EvolutionActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        ///initializeEvolutionView();
-    }
-
-    @Override
     protected void onStart() {
         super.onStart();
-        Event event = new Event();
-        event.setId(15);
-        event.setColor(Color.RED);
-        ((EvolutionView) findViewById(R.id.mapView)).handleFeatureGroupVisible(event, 1);
+        evolveFeature(getIntent().getExtras());
+    }
+
+    private void evolveFeature(Bundle extras) {
+        Event event = (Event) extras.getSerializable("event");
+        EvolutionView evolutionView = (EvolutionView) findViewById(R.id.mapView);
+        evolutionView.handleFeatureGroupVisible(event, Long.valueOf(extras.getString("featureId")));
     }
 
     private void initializeEvolutionView() {
