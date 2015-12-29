@@ -16,21 +16,21 @@
         app:showAsAction="always" />
     <item
         android:id="@+id/marker"
+        android:icon="@drawable/markernotselected"
         android:orderInCategory="100"
         android:title="@string/marker"
-        android:icon="@drawable/markernotselected"
         app:showAsAction="always" />
     <item
         android:id="@+id/line"
+        android:icon="@drawable/line_icon"
         android:orderInCategory="100"
         android:title="@string/line"
-        android:icon="@drawable/line_icon"
         app:showAsAction="always" />
     <item
         android:id="@+id/polygon"
+        android:icon="@drawable/polygonselected"
         android:orderInCategory="100"
         android:title="@string/polygon"
-        android:icon="@drawable/polygonselected"
         app:showAsAction="always" />
 
     <item
