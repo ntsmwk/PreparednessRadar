@@ -10,9 +10,12 @@
     <string name="line">Line</string>
     <string name="polygon">Polygon</string>
 
-    <string name="edit">Edit</string>
+    <string name="context_menu">Context Menu</string>
     <string name="create">Create</string>
+    <string name="edit">Edit</string>
     <string name="evolve">Evolve</string>
+    <string name="evolution">Evolution</string>
 
+    <string name="forward">Forward</string>
     <string name="back">Back</string>
 </resources>

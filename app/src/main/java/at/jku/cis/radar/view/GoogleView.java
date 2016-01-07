@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import at.jku.cis.radar.R;
 import at.jku.cis.radar.activity.EvolutionActivity;
 import at.jku.cis.radar.activity.RadarActivity;
 import at.jku.cis.radar.command.AddFeatureCommand;
@@ -102,7 +103,6 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         if (featureList.size() == 1) {
             showContextMenu();
             setCurrentFeature(featureList.get(0));
-            GeometryUtils.setEditableFeature(featureList.get(0));
         } else {
             Toast.makeText(getContext(), "Please click on the specific area without other overlapping events.", Toast.LENGTH_SHORT).show();
         }
@@ -110,10 +110,10 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
     @Override
     protected void onCreateContextMenu(ContextMenu menu) {
-        menu.setHeaderTitle("Context Menu");
-        menu.add(NO_ID, 0, 0, ApplicationMode.EDITING.name());
-        menu.add(NO_ID, 1, 0, ApplicationMode.EVOLVING.name());
-        menu.add(NO_ID, 2, 0, "Show Evolution");
+        menu.setHeaderTitle(R.string.context_menu);
+        menu.add(NO_ID, 0, 0, R.string.edit);
+        menu.add(NO_ID, 1, 0, R.string.evolve);
+        menu.add(NO_ID, 2, 0, R.string.evolution);
         MenuItem.OnMenuItemClickListener contextMenuClickListener = new MenuItem.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item) {
@@ -383,5 +383,4 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     private GeoJsonLayer getCorrespondingGeoJsonLayer() {
         return event2GeoJsonLayer.get(penSetting.getEvent());
     }
-
 }
