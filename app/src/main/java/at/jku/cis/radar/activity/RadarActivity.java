@@ -29,12 +29,6 @@ public class RadarActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onContextMenuClosed(Menu menu) {
-        findGoogleView().onContextMenuClosed();
-        super.onContextMenuClosed(menu);
-    }
-
-    @Override
     public boolean onCreateOptionsMenu(final Menu menu) {
         getMenuInflater().inflate(R.menu.menu_radar, menu);
         menu.findItem(R.id.erase).setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {

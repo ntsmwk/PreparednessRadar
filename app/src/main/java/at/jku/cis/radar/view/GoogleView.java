@@ -6,6 +6,7 @@ import android.graphics.Point;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.ContextMenu;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.widget.Toast;
@@ -102,7 +103,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         }
         if (featureList.size() == 1) {
             showContextMenu();
-            setCurrentFeature(featureList.get(0));
+            currentFeature = featureList.get(0);
         } else {
             Toast.makeText(getContext(), "Please click on the specific area without other overlapping events.", Toast.LENGTH_SHORT).show();
         }
@@ -127,6 +128,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
                         GoogleView.this.applicationMode = ApplicationMode.EVOLVING;
                         break;
                     case 2:
+                        GeometryUtils.setNotEditableFeature(currentFeature);
                         Intent intent = new Intent(getContext(), EvolutionActivity.class);
                         intent.putExtra("event", penSetting.getEvent());
                         intent.putExtra("featureId", currentFeature.getId());
@@ -142,12 +144,13 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         super.onCreateContextMenu(menu);
     }
 
-    public PenSetting getPenSetting() {
-        return penSetting;
+    public void onContextMenuClosed(Menu menu) {
+        GeometryUtils.setNotEditableFeature(currentFeature);
+        this.currentFeature = null;
     }
 
-    private void setCurrentFeature(GeoJsonFeature currentFeature) {
-        this.currentFeature = currentFeature;
+    public PenSetting getPenSetting() {
+        return penSetting;
     }
 
     @Override
@@ -272,7 +275,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
         new AddGeometryEvolveCommand(geoJsonFeature, currentFeature, getCorrespondingGeoJsonLayer()).doCommand();
         saveEvolvedFeature(geoJsonFeature);
-        setCurrentFeature(geoJsonFeature);
+        currentFeature = geoJsonFeature;
         GeometryUtils.setNotEditableFeature(geoJsonFeature);
     }
 
