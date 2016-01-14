@@ -36,7 +36,7 @@ public class FeatureStyleService {
     private GeoJsonPolygonStyle createPolygonStyle(int fillColor, int strokeColor) {
         GeoJsonPolygonStyle polygonStyle = new GeoJsonPolygonStyle();
         polygonStyle.setFillColor(fillColor);
-        polygonStyle.setStrokeColor(fillColor);
+        polygonStyle.setStrokeColor(strokeColor);
         polygonStyle.setStrokeWidth(WIDTH);
         return polygonStyle;
     }
