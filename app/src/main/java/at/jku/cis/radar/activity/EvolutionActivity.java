@@ -1,9 +1,10 @@
 package at.jku.cis.radar.activity;
 
 import android.app.FragmentTransaction;
-import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.view.Menu;
+import android.view.MenuItem;
 
 import com.google.android.gms.maps.MapFragment;
 
@@ -23,16 +24,30 @@ public class EvolutionActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        ///initializeEvolutionView();
+        evolveFeature(getIntent().getExtras());
     }
 
     @Override
-    protected void onStart() {
-        super.onStart();
-        Event event = new Event();
-        event.setId(15);
-        event.setColor(Color.RED);
-        ((EvolutionView) findViewById(R.id.mapView)).handleFeatureGroupVisible(event, 1);
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_evolution, menu);
+        MenuItem.OnMenuItemClickListener menuItemClickListener = new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                switch (item.getItemId()) {
+                    case R.id.back:
+                        finish();
+                }
+                return true;
+            }
+        };
+        menu.findItem(R.id.back).setOnMenuItemClickListener(menuItemClickListener);
+        return super.onCreateOptionsMenu(menu);
+    }
+
+    private void evolveFeature(Bundle extras) {
+        Event event = (Event) extras.getSerializable("event");
+        EvolutionView evolutionView = (EvolutionView) findViewById(R.id.mapView);
+        evolutionView.handleFeatureGroupVisible(event, Long.valueOf(extras.getString("featureId")));
     }
 
     private void initializeEvolutionView() {

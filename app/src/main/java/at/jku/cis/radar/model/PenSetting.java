@@ -1,12 +1,9 @@
 package at.jku.cis.radar.model;
 
-import android.graphics.Color;
-
 public class PenSetting {
+    private Event event;
     private PenMode penMode = PenMode.DRAWING;
     private DrawType drawType = DrawType.POLYGON;
-    private int color = Color.BLACK;
-    private Event event;
 
     public PenMode getPenMode() {
         return penMode;
@@ -14,14 +11,6 @@ public class PenSetting {
 
     public void setPenMode(PenMode penMode) {
         this.penMode = penMode;
-    }
-
-    public int getColor() {
-        return color;
-    }
-
-    public void setColor(int color) {
-        this.color = color;
     }
 
     public Event getEvent() {

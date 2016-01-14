@@ -1,17 +1,16 @@
 package at.jku.cis.radar.view;
 
-import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Point;
-import android.location.Location;
-import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.ContextMenu;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.widget.Toast;
 
-import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -33,6 +32,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 
+import at.jku.cis.radar.R;
+import at.jku.cis.radar.activity.EvolutionActivity;
+import at.jku.cis.radar.activity.RadarActivity;
 import at.jku.cis.radar.command.AddFeatureCommand;
 import at.jku.cis.radar.command.AddGeometryEditCommand;
 import at.jku.cis.radar.command.AddGeometryEvolveCommand;
@@ -67,10 +69,9 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     private PenSetting penSetting = new PenSetting();
     private ApplicationMode applicationMode = ApplicationMode.PAINTING;
 
-    private GeoJsonFeature currentEditingFeature;
-
+    private GeoJsonFeature currentFeature;
     private GeoJsonGeometryBuilder geoJsonGeometryBuilder;
-    private Map<Event, GeoJsonLayer> geoJsonLayers = new HashMap<>();
+    private Map<Event, GeoJsonLayer> event2GeoJsonLayer = new HashMap<>();
 
 
     public GoogleView(Context context, AttributeSet attrs) {
@@ -83,34 +84,69 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         this.googleMap.setMyLocationEnabled(true);
         this.googleMap.setMapType(GoogleMap.MAP_TYPE_SATELLITE);
         this.googleMap.setOnMapLongClickListener(this);
-        this.googleMap.getUiSettings().setMyLocationButtonEnabled(true);
     }
 
     @Override
     public void onMapLongClick(LatLng latLng) {
-        showContextMenu();
+        if (currentFeature != null) {
+            GeometryUtils.setNotEditableFeature(this.currentFeature);
+        }
+        Geometry geometry = new GeoJsonGeometry2GeometryTransformer().transform(new GeoJsonPoint(latLng));
+
+        List<GeoJsonFeature> featureList = new ArrayList<>();
+        GeoJsonLayer geoJsonLayer = getCorrespondingGeoJsonLayer();
+        for (GeoJsonFeature feature : geoJsonLayer.getFeatures()) {
+            GeometryCollection geometryCollection = (GeometryCollection) new GeoJsonGeometry2GeometryTransformer().transform(feature.getGeometry());
+            if (GeometryUtils.intersects(geometryCollection, geometry)) {
+                featureList.add(feature);
+            }
+        }
+        if (featureList.size() == 1) {
+            showContextMenu();
+            currentFeature = featureList.get(0);
+        } else {
+            Toast.makeText(getContext(), "Please click on the specific area without other overlapping events.", Toast.LENGTH_SHORT).show();
+        }
     }
 
     @Override
     protected void onCreateContextMenu(ContextMenu menu) {
+        menu.setHeaderTitle(R.string.context_menu);
+        menu.add(NO_ID, 0, 0, R.string.edit);
+        menu.add(NO_ID, 1, 0, R.string.evolve);
+        menu.add(NO_ID, 2, 0, R.string.evolution);
+        MenuItem.OnMenuItemClickListener contextMenuClickListener = new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                switch (item.getItemId()) {
+                    case 0:
+                        GeometryUtils.setEditableFeature(currentFeature);
+                        GoogleView.this.applicationMode = ApplicationMode.EDITING;
+                        break;
+                    case 1:
+                        GeometryUtils.setEditableFeature(currentFeature);
+                        GoogleView.this.applicationMode = ApplicationMode.EVOLVING;
+                        break;
+                    case 2:
+                        GeometryUtils.setNotEditableFeature(currentFeature);
+                        Intent intent = new Intent(getContext(), EvolutionActivity.class);
+                        intent.putExtra("event", penSetting.getEvent());
+                        intent.putExtra("featureId", currentFeature.getId());
+                        ((RadarActivity) getContext()).startActivity(intent);
+                        break;
+                }
+                return true;
+            }
+        };
+        menu.getItem(0).setOnMenuItemClickListener(contextMenuClickListener);
+        menu.getItem(1).setOnMenuItemClickListener(contextMenuClickListener);
+        menu.getItem(2).setOnMenuItemClickListener(contextMenuClickListener);
         super.onCreateContextMenu(menu);
-        menu.setHeaderTitle("Context Menu");
-        menu.add(0, getId(), 0, "Action 1");
-        menu.add(0, getId(), 0, "Action 2");
-        menu.add(0, getId(), 0, "Action 3");
-        getActivity().registerForContextMenu(this);
     }
 
-    public Activity getActivity() {
-        return (Activity) getContext();
-    }
-
-    public ApplicationMode getApplicationMode() {
-        return applicationMode;
-    }
-
-    public void setApplicationMode(ApplicationMode applicationMode) {
-        this.applicationMode = applicationMode;
+    public void onContextMenuClosed(Menu menu) {
+        GeometryUtils.setNotEditableFeature(currentFeature);
+        this.currentFeature = null;
     }
 
     public PenSetting getPenSetting() {
@@ -144,26 +180,25 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
             geoJsonLayer.addLayerToMap();
         }
         paintingEnabled = event.isSelected();
-        penSetting.setColor(event.getColor());
         penSetting.setEvent(event);
     }
 
     private GeoJsonLayer findGeoJsonLayerByEvent(Event event) {
-        GeoJsonLayer geoJsonLayer = geoJsonLayers.get(event);
+        GeoJsonLayer geoJsonLayer = event2GeoJsonLayer.get(event);
         if (geoJsonLayer == null) {
             JSONObject jsonObject = loadFeatures(event);
             geoJsonLayer = new GeoJsonLayer(googleMap, jsonObject);
             geoJsonLayer.getDefaultPolygonStyle().setFillColor(event.getColor());
             geoJsonLayer.getDefaultPolygonStyle().setStrokeColor(event.getColor());
             geoJsonLayer.getDefaultLineStringStyle().setColor(event.getColor());
-            geoJsonLayers.put(event, geoJsonLayer);
+            event2GeoJsonLayer.put(event, geoJsonLayer);
         }
         return geoJsonLayer;
     }
 
 
     @Override
-    public boolean dispatchTouchEvent(@NonNull MotionEvent motionEvent) {
+    public boolean dispatchTouchEvent(MotionEvent motionEvent) {
         if (googleMap != null) {
             if (paintingEnabled && motionEvent.getToolType(0) == MotionEvent.TOOL_TYPE_STYLUS && penSetting.getEvent() != null) {
                 dispatchStylusTouchEvent(motionEvent);
@@ -175,57 +210,22 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     }
 
     private void dispatchStylusTouchEvent(MotionEvent motionEvent) {
-        Point currentPosition = new Point((int) motionEvent.getX(), (int) motionEvent.getY());
-        LatLng currentLatLng = googleMap.getProjection().fromScreenLocation(currentPosition);
+        Point point = new Point((int) motionEvent.getX(), (int) motionEvent.getY());
+        LatLng latLng = googleMap.getProjection().fromScreenLocation(point);
 
-        if ((ApplicationMode.EDITING == applicationMode || ApplicationMode.EVOLVING == applicationMode) && this.currentEditingFeature == null) {
-            selectEditableFeature(motionEvent, currentLatLng);
+        if (PenMode.ERASING == penSetting.getPenMode()) {
+            doErasing(motionEvent.getAction(), latLng);
         } else {
-            if (PenMode.ERASING == penSetting.getPenMode()) {
-                doErasing(motionEvent, currentLatLng);
-            } else {
-                doPainting(motionEvent, currentLatLng);
-            }
+            doPainting(motionEvent.getAction(), latLng);
         }
     }
 
-    private void selectEditableFeature(@NonNull MotionEvent motionEvent, LatLng currentLatLng) {
-        if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
-            GeoJsonPoint editPoint = new GeoJsonPoint(currentLatLng);
-            setEditFeatureOnMap(editPoint);
-        }
-    }
-
-    private void setEditFeatureOnMap(GeoJsonPoint editPoint) {
-        Geometry editGeometry = new GeoJsonGeometry2GeometryTransformer().transform(editPoint);
-        List<GeoJsonFeature> featureList = new ArrayList<>();
-        if (this.currentEditingFeature != null) {
-            GeometryUtils.setNotEditableFeature(this.currentEditingFeature);
-        }
-        for (GeoJsonLayer geoJsonLayer : this.geoJsonLayers.values()) {
-            if (!geoJsonLayer.isLayerOnMap()) {
-                continue;
-            }
-            for (GeoJsonFeature feature : geoJsonLayer.getFeatures()) {
-                GeometryCollection geometryCollection = (GeometryCollection) new GeoJsonGeometry2GeometryTransformer().transform(feature.getGeometry());
-                if (GeometryUtils.intersects(geometryCollection, editGeometry)) {
-                    featureList.add(feature);
-                }
-            }
-            if (featureList.size() == 1) {
-                setEditableFeature(featureList.get(0));
-            } else {
-                Toast.makeText(getContext(), "Can only edit one Event. Please click on the specific area without other overlapping events.", Toast.LENGTH_SHORT).show();
-            }
-        }
-    }
-
-    private void doPainting(@NonNull MotionEvent motionEvent, LatLng latLng) {
-        if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+    private void doPainting(int action, LatLng latLng) {
+        if (MotionEvent.ACTION_DOWN == action) {
             geoJsonGeometryBuilder = new GeoJsonGeometryBuilder(penSetting.getDrawType());
         }
         geoJsonGeometryBuilder.addCoordinate(latLng);
-        if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+        if (MotionEvent.ACTION_UP == action) {
             GeoJsonGeometryCollection geoJsonGeometry = geoJsonGeometryBuilder.build();
 
             if (ApplicationMode.PAINTING == applicationMode) {
@@ -238,17 +238,16 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         }
     }
 
-
-    private void doErasing(@NonNull MotionEvent motionEvent, LatLng latLng) {
-        if (motionEvent.getAction() == MotionEvent.ACTION_DOWN) {
+    private void doErasing(int action, LatLng latLng) {
+        if (MotionEvent.ACTION_DOWN == action) {
             geoJsonGeometryBuilder = new GeoJsonGeometryBuilder(DrawType.POLYGON);
         }
         geoJsonGeometryBuilder.addCoordinate(latLng);
-        if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
+        if (MotionEvent.ACTION_UP == action) {
             GeoJsonLayer geoJsonLayer = getCorrespondingGeoJsonLayer();
             GeoJsonGeometryCollection geoJsonGeometry = geoJsonGeometryBuilder.build();
             if (ApplicationMode.PAINTING == applicationMode) {
-                doCreateModeErasing(geoJsonLayer, geoJsonGeometry);
+                doCreateModeErasing(geoJsonLayer.getFeatures(), geoJsonGeometry);
             } else if (ApplicationMode.EDITING == applicationMode) {
                 doEditModeErasing(geoJsonGeometry);
             } else {
@@ -258,34 +257,30 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     }
 
     private void doCreateModePainting(GeoJsonGeometryCollection geoJsonGeometry) {
-        GeoJsonFeature geoJsonFeature = new GeoJsonFeatureBuilder(geoJsonGeometry).setColor(penSetting.getColor()).build("-1");
-        saveCreatedFeature(geoJsonFeature);
+        saveCreatedFeature(new GeoJsonFeatureBuilder(geoJsonGeometry).setColor(penSetting.getEvent().getColor()).build("-1"));
     }
-
 
     private void doEditModePainting(GeoJsonGeometryCollection geoJsonGeometry) {
-        new AddGeometryEditCommand(geoJsonGeometry, getCorrespondingGeoJsonLayer(), currentEditingFeature).doCommand();
-        saveEditedFeature(currentEditingFeature);
+        new AddGeometryEditCommand(geoJsonGeometry, getCorrespondingGeoJsonLayer(), currentFeature).doCommand();
+        saveEditedFeature(currentFeature);
     }
 
-
     private void doEvolveModePainting(GeoJsonGeometryCollection geoJsonGeometry) {
-        GeoJsonGeometryCollection geoJsonGeometryCollection = (GeoJsonGeometryCollection) currentEditingFeature.getGeometry();
+        GeoJsonGeometryCollection geoJsonGeometryCollection = (GeoJsonGeometryCollection) currentFeature.getGeometry();
         geoJsonGeometryCollection.getGeometries().add(geoJsonGeometry);
         GeometryCollection geometryCollection = (GeometryCollection) new GeoJsonGeometry2GeometryTransformer().transform(geoJsonGeometryCollection);
         GeoJsonFeatureBuilder featureBuilder = new GeoJsonFeatureBuilder((GeoJsonGeometryCollection) new Geometry2GeoJsonGeometryTransformer().transform(GeometryUtils.union(geometryCollection)));
-        featureBuilder.setColor(currentEditingFeature.getPolygonStyle().getFillColor());
-        GeoJsonFeature geoJsonFeature = featureBuilder.build(currentEditingFeature.getId());
+        featureBuilder.setColor(currentFeature.getPolygonStyle().getFillColor());
+        GeoJsonFeature geoJsonFeature = featureBuilder.build(currentFeature.getId());
 
-        new AddGeometryEvolveCommand(geoJsonFeature, currentEditingFeature, getCorrespondingGeoJsonLayer()).doCommand();
+        new AddGeometryEvolveCommand(geoJsonFeature, currentFeature, getCorrespondingGeoJsonLayer()).doCommand();
         saveEvolvedFeature(geoJsonFeature);
-        setCurrentEditingFeature(geoJsonFeature);
+        currentFeature = geoJsonFeature;
         GeometryUtils.setNotEditableFeature(geoJsonFeature);
     }
 
-
-    private void doCreateModeErasing(GeoJsonLayer geoJsonLayer, GeoJsonGeometryCollection geoJsonGeometry) {
-        GeoJsonIntersectionRemover geoJsonIntersectionRemover = new GeoJsonIntersectionRemover(geoJsonLayer.getFeatures(), geoJsonGeometry.getGeometries().get(0));
+    private void doCreateModeErasing(Iterable<GeoJsonFeature> geoJsonFeatures, GeoJsonGeometryCollection geoJsonGeometry) {
+        GeoJsonIntersectionRemover geoJsonIntersectionRemover = new GeoJsonIntersectionRemover(geoJsonFeatures, geoJsonGeometry.getGeometries().get(0));
         geoJsonIntersectionRemover.intersectGeoJsonFeatures();
         new RemoveFeatureCommand(getCorrespondingGeoJsonLayer(), geoJsonIntersectionRemover.getAddList(), geoJsonIntersectionRemover.getRemoveList()).doCommand();
         for (GeoJsonFeature geoJsonFeature : geoJsonIntersectionRemover.getAddList()) {
@@ -294,18 +289,18 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     }
 
     private void doEditModeErasing(GeoJsonGeometryCollection geoJsonGeometry) {
-        GeoJsonIntersectionRemover geoJsonIntersectionRemover = new GeoJsonIntersectionRemover(Collections.singletonList(currentEditingFeature), geoJsonGeometry.getGeometries().get(0));
+        GeoJsonIntersectionRemover geoJsonIntersectionRemover = new GeoJsonIntersectionRemover(Collections.singletonList(currentFeature), geoJsonGeometry.getGeometries().get(0));
         geoJsonIntersectionRemover.intersectGeoJsonFeatures();
         GeoJsonGeometryCollection newGeometryCollection = new GeoJsonGeometryCollection(new ArrayList<GeoJsonGeometry>());
         if (!geoJsonIntersectionRemover.getAddList().isEmpty()) {
             newGeometryCollection = (GeoJsonGeometryCollection) geoJsonIntersectionRemover.getAddList().get(0).getGeometry();
         }
-        new RemoveGeometryEditCommand(getCorrespondingGeoJsonLayer(), currentEditingFeature, newGeometryCollection).doCommand();
-        saveEditedFeature(currentEditingFeature);
+        new RemoveGeometryEditCommand(getCorrespondingGeoJsonLayer(), currentFeature, newGeometryCollection).doCommand();
+        saveEditedFeature(currentFeature);
     }
 
     private void doEvolveModeErasing(GeoJsonGeometryCollection geoJsonGeometry) {
-        GeoJsonIntersectionRemover geoJsonIntersectionRemover = new GeoJsonIntersectionRemover(Collections.singletonList(currentEditingFeature), geoJsonGeometry.getGeometries().get(0));
+        GeoJsonIntersectionRemover geoJsonIntersectionRemover = new GeoJsonIntersectionRemover(Collections.singletonList(currentFeature), geoJsonGeometry.getGeometries().get(0));
         geoJsonIntersectionRemover.intersectGeoJsonFeatures();
         new RemoveGeometryEvolveCommand(getCorrespondingGeoJsonLayer(), geoJsonIntersectionRemover.getAddList(), geoJsonIntersectionRemover.getRemoveList()).doCommand();
         for (GeoJsonFeature geoJsonFeature : geoJsonIntersectionRemover.getAddList()) {
@@ -370,6 +365,16 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
     }
 
+    private GeoJsonFeature createNewGeoJsonFeatureWithCorrectID(Object o, GeoJsonFeature geoJsonFeature) {
+        GeoJsonFeature geoJsonFeatureNew = new GeoJsonFeature(geoJsonFeature.getGeometry(), o.toString(), new HashMap<String, String>(), null);
+        geoJsonFeatureNew.setPolygonStyle(geoJsonFeature.getPolygonStyle());
+        geoJsonFeatureNew.setPointStyle(geoJsonFeature.getPointStyle());
+        geoJsonFeatureNew.setLineStringStyle(geoJsonFeature.getLineStringStyle());
+        event2GeoJsonLayer.get(penSetting.getEvent()).removeFeature(geoJsonFeature);
+        event2GeoJsonLayer.get(penSetting.getEvent()).addFeature(geoJsonFeatureNew);
+        return geoJsonFeatureNew;
+    }
+
     private JSONObject loadFeatures(Event event) {
         try {
             return new GetFeaturesTask().execute(event.getId()).get();
@@ -378,39 +383,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         }
     }
 
-    private void setEditableFeature(GeoJsonFeature feature) {
-        this.currentEditingFeature = feature;
-        GeometryUtils.setEditableFeature(feature);
-    }
-
-
     private GeoJsonLayer getCorrespondingGeoJsonLayer() {
-        return geoJsonLayers.get(penSetting.getEvent());
-    }
-
-
-    public GeoJsonFeature getCurrentEditingFeature() {
-        return currentEditingFeature;
-    }
-
-    public void setCurrentEditingFeature(GeoJsonFeature currentEditingFeature) {
-        this.currentEditingFeature = currentEditingFeature;
-    }
-
-    public void handleNewLocation(Location location) {
-        double currentLatitude = location.getLatitude();
-        double currentLongitude = location.getLongitude();
-        LatLng latLng = new LatLng(currentLatitude, currentLongitude);
-        googleMap.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 15));
-    }
-
-    private GeoJsonFeature createNewGeoJsonFeatureWithCorrectID(Object o, GeoJsonFeature geoJsonFeature) {
-        GeoJsonFeature geoJsonFeatureNew = new GeoJsonFeature(geoJsonFeature.getGeometry(), o.toString(), new HashMap<String, String>(), null);
-        geoJsonFeatureNew.setPolygonStyle(geoJsonFeature.getPolygonStyle());
-        geoJsonFeatureNew.setPointStyle(geoJsonFeature.getPointStyle());
-        geoJsonFeatureNew.setLineStringStyle(geoJsonFeature.getLineStringStyle());
-        geoJsonLayers.get(penSetting.getEvent()).removeFeature(geoJsonFeature);
-        geoJsonLayers.get(penSetting.getEvent()).addFeature(geoJsonFeatureNew);
-        return geoJsonFeatureNew;
+        return event2GeoJsonLayer.get(penSetting.getEvent());
     }
 }
