@@ -86,7 +86,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
     private void setCurrentFeature(GeoJsonFeature currentFeature) {
         FeatureStyleService featureStyleService = new FeatureStyleService();
-        int color = currentFeature.getPolygonStyle().getFillColor();
+        int color = this.currentFeature.getPolygonStyle().getFillColor();
         if (currentFeature == null) {
             this.currentFeature.setPointStyle(featureStyleService.createDefaultPointStyle(color));
             this.currentFeature.setPolygonStyle(featureStyleService.createDefaultPolygonStyle(color));
