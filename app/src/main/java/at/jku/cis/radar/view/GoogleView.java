@@ -138,44 +138,30 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         menu.add(NO_ID, 1, 0, R.string.edit);
         menu.add(NO_ID, 2, 0, R.string.evolve);
         menu.add(NO_ID, 3, 0, R.string.evolution);
-        MenuItem.OnMenuItemClickListener contextMenuClickListener = new MenuItem.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                switch (item.getItemId()) {
-                    case 0:
-                        FeatureStyleService featureStyleService1 = new FeatureStyleService();
-
-                        currentFeature.setPointStyle(featureStyleService1.createDefaultPointStyle(penSetting.getEvent().getColor()));
-                        currentFeature.setLineStringStyle(featureStyleService1.createDefaultLineStringStyle(penSetting.getEvent().getColor()));
-                        currentFeature.setPolygonStyle(featureStyleService1.createDefaultPolygonStyle(penSetting.getEvent().getColor()));
-                        GoogleView.this.applicationMode = ApplicationMode.CREATING;
-                    case 1:
-                        GoogleView.this.applicationMode = ApplicationMode.EDITING;
-                        break;
-                    case 2:
-                        GoogleView.this.applicationMode = ApplicationMode.EVOLVING;
-                        break;
-                    case 3:
-                        FeatureStyleService featureStyleService = new FeatureStyleService();
-
-                        currentFeature.setPointStyle(featureStyleService.createDefaultPointStyle(penSetting.getEvent().getColor()));
-                        currentFeature.setLineStringStyle(featureStyleService.createDefaultLineStringStyle(penSetting.getEvent().getColor()));
-                        currentFeature.setPolygonStyle(featureStyleService.createDefaultPolygonStyle(penSetting.getEvent().getColor()));
-                        GoogleView.this.applicationMode = ApplicationMode.CREATING;
-                        Intent intent = new Intent(getContext(), EvolutionActivity.class);
-                        intent.putExtra("event", penSetting.getEvent());
-                        intent.putExtra("featureId", currentFeature.getId());
-                        getActivity().startActivity(intent);
-                        break;
-                }
-                return true;
-            }
-        };
-        menu.getItem(0).setOnMenuItemClickListener(contextMenuClickListener);
-        menu.getItem(1).setOnMenuItemClickListener(contextMenuClickListener);
-        menu.getItem(2).setOnMenuItemClickListener(contextMenuClickListener);
-        menu.getItem(3).setOnMenuItemClickListener(contextMenuClickListener);
         super.onCreateContextMenu(menu);
+    }
+
+    public void onConextItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case 0:
+                setCurrentFeature(null);
+                GoogleView.this.applicationMode = ApplicationMode.CREATING;
+                break;
+            case 1:
+                GoogleView.this.applicationMode = ApplicationMode.EDITING;
+                break;
+            case 2:
+                GoogleView.this.applicationMode = ApplicationMode.EVOLVING;
+                break;
+            case 3:
+                setCurrentFeature(null);
+                GoogleView.this.applicationMode = ApplicationMode.CREATING;
+                Intent intent = new Intent(getContext(), EvolutionActivity.class);
+                intent.putExtra("event", penSetting.getEvent());
+                intent.putExtra("featureId", currentFeature.getId());
+                getActivity().startActivity(intent);
+                break;
+        }
     }
 
     @Override

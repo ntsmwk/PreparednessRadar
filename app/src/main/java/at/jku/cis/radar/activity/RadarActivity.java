@@ -31,14 +31,23 @@ public class RadarActivity extends AppCompatActivity {
     }
 
     @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        findGoogleView().onConextItemSelected(item);
+        return super.onContextItemSelected(item);
+    }
+
+    @Override
     public void onContextMenuClosed(Menu menu) {
-        ApplicationMode applicationMode = findGoogleView().getApplicationMode();
+        super.onContextMenuClosed(menu);
+        handleApplicationModeChanged(findGoogleView().getApplicationMode());
+    }
+
+    private void handleApplicationModeChanged(ApplicationMode applicationMode) {
         if (ApplicationMode.EDITING.equals(applicationMode) || ApplicationMode.EVOLVING.equals(applicationMode)) {
             setSidebarDisabled(true, ALPHA_HIDDEN, Color.GRAY);
         } else {
             setSidebarDisabled(false, ALPHA_VISIBLE, Color.WHITE);
         }
-        super.onContextMenuClosed(menu);
     }
 
     @Override
