@@ -1,6 +1,7 @@
 package at.jku.cis.radar.activity;
 
 import android.app.FragmentTransaction;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
@@ -10,6 +11,7 @@ import android.view.View;
 import com.google.android.gms.maps.MapFragment;
 
 import at.jku.cis.radar.R;
+import at.jku.cis.radar.model.ApplicationMode;
 import at.jku.cis.radar.model.DrawType;
 import at.jku.cis.radar.model.PenMode;
 import at.jku.cis.radar.model.PenSetting;
@@ -26,6 +28,26 @@ public class RadarActivity extends AppCompatActivity {
         setContentView(R.layout.activity_radar);
         initializeSideBar();
         initializeGoogleMap();
+    }
+
+    @Override
+    public boolean onContextItemSelected(MenuItem item) {
+        findGoogleView().onConextItemSelected(item);
+        return super.onContextItemSelected(item);
+    }
+
+    @Override
+    public void onContextMenuClosed(Menu menu) {
+        super.onContextMenuClosed(menu);
+        handleApplicationModeChanged(findGoogleView().getApplicationMode());
+    }
+
+    private void handleApplicationModeChanged(ApplicationMode applicationMode) {
+        if (ApplicationMode.EDITING.equals(applicationMode) || ApplicationMode.EVOLVING.equals(applicationMode)) {
+            setSidebarDisabled(true, ALPHA_HIDDEN, Color.GRAY);
+        } else {
+            setSidebarDisabled(false, ALPHA_VISIBLE, Color.WHITE);
+        }
     }
 
     @Override

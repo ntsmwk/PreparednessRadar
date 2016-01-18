@@ -6,7 +6,6 @@ import android.graphics.Point;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.ContextMenu;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.widget.Toast;
@@ -49,6 +48,7 @@ import at.jku.cis.radar.model.PenMode;
 import at.jku.cis.radar.model.PenSetting;
 import at.jku.cis.radar.rest.FeaturesRestApi;
 import at.jku.cis.radar.rest.RestServiceGenerator;
+import at.jku.cis.radar.service.FeatureStyleService;
 import at.jku.cis.radar.service.GeoJsonFeatureBuilder;
 import at.jku.cis.radar.service.GeoJsonGeometryBuilder;
 import at.jku.cis.radar.service.GeoJsonIntersectionRemover;
@@ -60,22 +60,44 @@ import retrofit.Callback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
 
-
 public class GoogleView extends MapView implements OnMapReadyCallback, EventTreeFragment.EventClickListener, GoogleMap.OnMapLongClickListener {
     private final String TAG = "GoogleView";
 
     private GoogleMap googleMap;
     private boolean paintingEnabled = false;
     private PenSetting penSetting = new PenSetting();
-    private ApplicationMode applicationMode = ApplicationMode.PAINTING;
+    private ApplicationMode applicationMode = ApplicationMode.CREATING;
 
     private GeoJsonFeature currentFeature;
     private GeoJsonGeometryBuilder geoJsonGeometryBuilder;
     private Map<Event, GeoJsonLayer> event2GeoJsonLayer = new HashMap<>();
 
-
     public GoogleView(Context context, AttributeSet attrs) {
         super(context, attrs);
+    }
+
+    public PenSetting getPenSetting() {
+        return penSetting;
+    }
+
+    public ApplicationMode getApplicationMode() {
+        return applicationMode;
+    }
+
+    private void setCurrentFeature(GeoJsonFeature currentFeature) {
+        FeatureStyleService featureStyleService = new FeatureStyleService();
+        int color = penSetting.getEvent().getColor();
+        if (currentFeature == null) {
+            this.currentFeature.setPointStyle(featureStyleService.createDefaultPointStyle(color));
+            this.currentFeature.setPolygonStyle(featureStyleService.createDefaultPolygonStyle(color));
+            this.currentFeature.setLineStringStyle(featureStyleService.createDefaultLineStringStyle(color));
+            this.currentFeature = null;
+        } else {
+            this.currentFeature = currentFeature;
+            this.currentFeature.setPointStyle(featureStyleService.createDefaultPointStyle(color));
+            this.currentFeature.setPolygonStyle(featureStyleService.createEditPolygonStyle(color));
+            this.currentFeature.setLineStringStyle(featureStyleService.createEditLineStringStyle());
+        }
     }
 
     @Override
@@ -89,7 +111,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     @Override
     public void onMapLongClick(LatLng latLng) {
         if (currentFeature != null) {
-            GeometryUtils.setNotEditableFeature(this.currentFeature);
+            setCurrentFeature(null);
         }
         Geometry geometry = new GeoJsonGeometry2GeometryTransformer().transform(new GeoJsonPoint(latLng));
 
@@ -102,8 +124,8 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
             }
         }
         if (featureList.size() == 1) {
+            setCurrentFeature(featureList.get(0));
             showContextMenu();
-            currentFeature = featureList.get(0);
         } else {
             Toast.makeText(getContext(), "Please click on the specific area without other overlapping events.", Toast.LENGTH_SHORT).show();
         }
@@ -112,45 +134,34 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     @Override
     protected void onCreateContextMenu(ContextMenu menu) {
         menu.setHeaderTitle(R.string.context_menu);
-        menu.add(NO_ID, 0, 0, R.string.edit);
-        menu.add(NO_ID, 1, 0, R.string.evolve);
-        menu.add(NO_ID, 2, 0, R.string.evolution);
-        MenuItem.OnMenuItemClickListener contextMenuClickListener = new MenuItem.OnMenuItemClickListener() {
-            @Override
-            public boolean onMenuItemClick(MenuItem item) {
-                switch (item.getItemId()) {
-                    case 0:
-                        GeometryUtils.setEditableFeature(currentFeature);
-                        GoogleView.this.applicationMode = ApplicationMode.EDITING;
-                        break;
-                    case 1:
-                        GeometryUtils.setEditableFeature(currentFeature);
-                        GoogleView.this.applicationMode = ApplicationMode.EVOLVING;
-                        break;
-                    case 2:
-                        GeometryUtils.setNotEditableFeature(currentFeature);
-                        Intent intent = new Intent(getContext(), EvolutionActivity.class);
-                        intent.putExtra("event", penSetting.getEvent());
-                        intent.putExtra("featureId", currentFeature.getId());
-                        ((RadarActivity) getContext()).startActivity(intent);
-                        break;
-                }
-                return true;
-            }
-        };
-        menu.getItem(0).setOnMenuItemClickListener(contextMenuClickListener);
-        menu.getItem(1).setOnMenuItemClickListener(contextMenuClickListener);
-        menu.getItem(2).setOnMenuItemClickListener(contextMenuClickListener);
+        menu.add(NO_ID, 0, 0, R.string.create);
+        menu.add(NO_ID, 1, 0, R.string.edit);
+        menu.add(NO_ID, 2, 0, R.string.evolve);
+        menu.add(NO_ID, 3, 0, R.string.evolution);
         super.onCreateContextMenu(menu);
     }
 
-    public void onContextMenuClosed(Menu menu) {
-        GeometryUtils.setNotEditableFeature(currentFeature);
-        this.currentFeature = null;
-    }
-
-    public PenSetting getPenSetting() {
-        return penSetting;
+    public void onConextItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case 0:
+                setCurrentFeature(null);
+                GoogleView.this.applicationMode = ApplicationMode.CREATING;
+                break;
+            case 1:
+                GoogleView.this.applicationMode = ApplicationMode.EDITING;
+                break;
+            case 2:
+                GoogleView.this.applicationMode = ApplicationMode.EVOLVING;
+                break;
+            case 3:
+                setCurrentFeature(null);
+                GoogleView.this.applicationMode = ApplicationMode.CREATING;
+                Intent intent = new Intent(getContext(), EvolutionActivity.class);
+                intent.putExtra("event", penSetting.getEvent());
+                intent.putExtra("featureId", currentFeature.getId());
+                getActivity().startActivity(intent);
+                break;
+        }
     }
 
     @Override
@@ -228,7 +239,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         if (MotionEvent.ACTION_UP == action) {
             GeoJsonGeometryCollection geoJsonGeometry = geoJsonGeometryBuilder.build();
 
-            if (ApplicationMode.PAINTING == applicationMode) {
+            if (ApplicationMode.CREATING == applicationMode) {
                 doCreateModePainting(geoJsonGeometry);
             } else if (ApplicationMode.EDITING == applicationMode) {
                 doEditModePainting(geoJsonGeometry);
@@ -246,7 +257,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         if (MotionEvent.ACTION_UP == action) {
             GeoJsonLayer geoJsonLayer = getCorrespondingGeoJsonLayer();
             GeoJsonGeometryCollection geoJsonGeometry = geoJsonGeometryBuilder.build();
-            if (ApplicationMode.PAINTING == applicationMode) {
+            if (ApplicationMode.CREATING == applicationMode) {
                 doCreateModeErasing(geoJsonLayer.getFeatures(), geoJsonGeometry);
             } else if (ApplicationMode.EDITING == applicationMode) {
                 doEditModeErasing(geoJsonGeometry);
@@ -275,8 +286,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
         new AddGeometryEvolveCommand(geoJsonFeature, currentFeature, getCorrespondingGeoJsonLayer()).doCommand();
         saveEvolvedFeature(geoJsonFeature);
-        currentFeature = geoJsonFeature;
-        GeometryUtils.setNotEditableFeature(geoJsonFeature);
+        setCurrentFeature(geoJsonFeature);
     }
 
     private void doCreateModeErasing(Iterable<GeoJsonFeature> geoJsonFeatures, GeoJsonGeometryCollection geoJsonGeometry) {
@@ -385,5 +395,9 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
     private GeoJsonLayer getCorrespondingGeoJsonLayer() {
         return event2GeoJsonLayer.get(penSetting.getEvent());
+    }
+
+    private RadarActivity getActivity() {
+        return (RadarActivity) getContext();
     }
 }
