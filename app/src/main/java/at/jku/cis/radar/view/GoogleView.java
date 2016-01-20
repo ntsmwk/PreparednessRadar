@@ -154,11 +154,11 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
                 GoogleView.this.applicationMode = ApplicationMode.EVOLVING;
                 break;
             case 3:
-                setCurrentFeature(null);
                 GoogleView.this.applicationMode = ApplicationMode.CREATING;
                 Intent intent = new Intent(getContext(), EvolutionActivity.class);
                 intent.putExtra("event", penSetting.getEvent());
                 intent.putExtra("featureId", currentFeature.getId());
+                setCurrentFeature(null);
                 getActivity().startActivity(intent);
                 break;
         }
