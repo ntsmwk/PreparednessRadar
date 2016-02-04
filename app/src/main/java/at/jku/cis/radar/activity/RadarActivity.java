@@ -27,12 +27,7 @@ public class RadarActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_radar);
-
-        Thread myThread = null;
-        Runnable myRunnableThread = new CountDownRunner(this, findGoogleView());
-        myThread = new Thread(myRunnableThread);
-        myThread.start();
-
+        startClockThread();
         initializeSideBar();
         initializeGoogleMap();
     }
@@ -133,7 +128,6 @@ public class RadarActivity extends AppCompatActivity {
         return (GoogleView) findViewById(R.id.mapView);
     }
 
-
     private void setSidebarDisabled(boolean disabled, float alpha, int gray) {
         ((EventTreeFragment) getFragmentManager().findFragmentById(R.id.sidebarLayout)).setDisabled(disabled);
         View sideLayout = findViewById(R.id.sidebarLayout);
@@ -145,6 +139,13 @@ public class RadarActivity extends AppCompatActivity {
         menu.findItem(R.id.polygon).setIcon(R.drawable.polygonnotselected);
         menu.findItem(R.id.line).setIcon(R.drawable.line_icon);
         menu.findItem(R.id.marker).setIcon(R.drawable.markernotselected);
+    }
+
+    private void startClockThread() {
+        Thread myThread = null;
+        Runnable myRunnableThread = new CountDownRunner(this, findGoogleView());
+        myThread = new Thread(myRunnableThread);
+        myThread.start();
     }
 
 

@@ -20,13 +20,8 @@ public class EvolutionActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_evolution);
         initializeEvolutionView();
-
-        Thread myThread = null;
-        Runnable myRunnableThread = new CountDownRunner(this, findEvolutionView());
-        myThread = new Thread(myRunnableThread);
-        myThread.start();
+        startClockThread();
     }
-
 
     @Override
     protected void onResume() {
@@ -70,5 +65,9 @@ public class EvolutionActivity extends AppCompatActivity {
         return (EvolutionView) findViewById(R.id.mapView);
     }
 
-
+    private void startClockThread() {
+        Runnable myRunnableThread = new CountDownRunner(this, findEvolutionView());
+        Thread myThread = new Thread(myRunnableThread);
+        myThread.start();
+    }
 }

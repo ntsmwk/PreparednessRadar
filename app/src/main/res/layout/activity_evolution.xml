@@ -12,19 +12,51 @@ tools:context=".EvolutionActivity">
     android:orientation="horizontal">
 </at.jku.cis.radar.view.EvolutionView>
     <RelativeLayout
-        android:layout_width="850dp"
+        android:layout_width="1000dp"
         android:layout_height="100dp"
         android:layout_centerHorizontal="true"
         android:layout_alignParentBottom="true"
         android:id="@+id/rangebarView">
-        <com.edmodo.rangebar.RangeBar
-            xmlns:custom="http://schemas.android.com/apk/res-auto"
-            custom:tickCount = "48"
-            android:id="@+id/rangebar"
-            android:layout_width="match_parent"
+        <RelativeLayout
+            android:layout_width="75dp"
             android:layout_height="match_parent"
-            />
+            android:layout_alignParentLeft="true"
+            android:layout_alignParentBottom="true">
+            <TextView
+                android:id="@+id/startTimeTextView"
+                android:layout_height="match_parent"
+                android:layout_width="match_parent"
+                android:textSize="20dp"
+                android:textColor="#ffffff">
+            </TextView>
+        </RelativeLayout>
+        <RelativeLayout
+            android:layout_width="850dp"
+            android:layout_height="match_parent"
+            android:layout_marginLeft="75dp">
+            <com.edmodo.rangebar.RangeBar
+                xmlns:custom="http://schemas.android.com/apk/res-auto"
+                custom:tickCount = "48"
+                android:id="@+id/rangebar"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                />
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="75dp"
+            android:layout_height="match_parent"
+            android:layout_alignParentRight="true">
+            <TextView
+                android:id="@+id/endTimeTextView"
+                android:layout_height="match_parent"
+                android:layout_width="match_parent"
+                android:textSize="20dp"
+                android:textColor="#ffffff">
+            </TextView>
+        </RelativeLayout>
     </RelativeLayout>
+
     <RelativeLayout
         android:id="@+id/datetimeTooltipView"
         android:layout_width="150dp"

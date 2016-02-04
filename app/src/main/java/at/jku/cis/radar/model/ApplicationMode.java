@@ -4,7 +4,7 @@ public enum ApplicationMode {
     CREATING("Create Mode"),
     EDITING("Edit Mode"),
     EVOLVING("Evolve Mode"),
-    EVOLVE("Evolution Mode");
+    EVOLUTION("Evolution Mode");
 
 
     private final String name;

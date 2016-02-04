@@ -3,9 +3,9 @@ package at.jku.cis.radar.view;
 import android.content.Context;
 import android.graphics.Color;
 import android.support.annotation.Nullable;
-import android.text.format.DateUtils;
 import android.util.AttributeSet;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import com.edmodo.rangebar.RangeBar;
 import com.google.android.gms.maps.GoogleMap;
@@ -16,14 +16,15 @@ import com.google.maps.android.geojson.GeoJsonLayer;
 import com.google.maps.android.geojson.GeoJsonPolygonStyle;
 
 import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.IteratorUtils;
-import org.apache.commons.collections4.ListUtils;
 import org.apache.commons.collections4.Predicate;
 import org.json.JSONObject;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
 
@@ -34,9 +35,11 @@ import at.jku.cis.radar.task.GetFeaturesEvolutionTask;
 
 
 public class EvolutionView extends MapView implements OnMapReadyCallback {
+    public static final int RANGEBAR_INDEX = 1;
+    public static final int STARTTIME_INDEX = 0;
+    public static final int ENDTIME_INDEX = 2;
     private static final int _24HOURS_IN_MILLIS = 24 * 60 * 60 * 1000;
     private static final int _30MIN_IN_MILLIS = 30 * 60 * 1000;
-    public static final int RANGEBAR_INDEX = 0;
     private GeoJsonLayer geoJsonLayer;
     private GoogleMap googleMap;
 
@@ -57,24 +60,17 @@ public class EvolutionView extends MapView implements OnMapReadyCallback {
         this.geoJsonLayer.addLayerToMap();
         Event event = (Event) ((EvolutionActivity) getContext()).getIntent().getExtras().get("event");
 
-        drawFeatureEvolutions(event, System.currentTimeMillis()-_24HOURS_IN_MILLIS, System.currentTimeMillis());
-        getRangeBarView().setOnRangeBarChangeListener(new RangeBar.OnRangeBarChangeListener() {
-            @Override
-            public void onIndexChangeListener(RangeBar rangeBar, int i, int i1) {
-                removeFeaturesFromLayer();
-                drawFeatureEvolutions((Event) ((EvolutionActivity) getContext()).getIntent().getExtras().get("event"),
-                        System.currentTimeMillis() + i * _30MIN_IN_MILLIS - _24HOURS_IN_MILLIS, System.currentTimeMillis() + (i1 + 1) * _30MIN_IN_MILLIS - _24HOURS_IN_MILLIS);
-
-            }
-        });
+        drawFeatureEvolutions(event, System.currentTimeMillis() - _24HOURS_IN_MILLIS, System.currentTimeMillis());
+        setRangeBarChangeListener();
+        setStartEndBeginTime(System.currentTimeMillis() - _24HOURS_IN_MILLIS, System.currentTimeMillis());
     }
 
     private void removeFeaturesFromLayer() {
         List<GeoJsonFeature> removeList = new ArrayList<>();
-        for(GeoJsonFeature feature : geoJsonLayer.getFeatures()){
+        for (GeoJsonFeature feature : geoJsonLayer.getFeatures()) {
             removeList.add(feature);
         }
-        for(GeoJsonFeature feature : removeList){
+        for (GeoJsonFeature feature : removeList) {
             geoJsonLayer.removeFeature(feature);
         }
     }
@@ -82,12 +78,24 @@ public class EvolutionView extends MapView implements OnMapReadyCallback {
     @Nullable
     private RangeBar getRangeBarView() {
         RangeBar rangebar = null;
-        for(int i = 0; i <  ((ViewGroup)getParent()).getChildCount(); i++){
-            if(((ViewGroup)getParent()).getChildAt(i).getId() == R.id.rangebarView){
-                rangebar = (RangeBar) ((ViewGroup)((ViewGroup)getParent()).getChildAt(i)).getChildAt(RANGEBAR_INDEX);
+        ViewGroup parent = (ViewGroup) getParent();
+        for (int i = 0; i < parent.getChildCount(); i++) {
+            if (parent.getChildAt(i).getId() == R.id.rangebarView) {
+                rangebar = (RangeBar) ((ViewGroup) ((ViewGroup) parent.getChildAt(i)).getChildAt(RANGEBAR_INDEX)).getChildAt(0);
             }
         }
         return rangebar;
+    }
+
+    private TextView getRangeBarTextView(int index) {
+        TextView textView = null;
+        ViewGroup parent = (ViewGroup) getParent();
+        for (int i = 0; i < parent.getChildCount(); i++) {
+            if (parent.getChildAt(i).getId() == R.id.rangebarView) {
+                textView = (TextView) ((ViewGroup) ((ViewGroup) parent.getChildAt(i)).getChildAt(index)).getChildAt(0);
+            }
+        }
+        return textView;
     }
 
 
@@ -133,6 +141,33 @@ public class EvolutionView extends MapView implements OnMapReadyCallback {
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private void setRangeBarChangeListener() {
+        getRangeBarView().setOnRangeBarChangeListener(new RangeBar.OnRangeBarChangeListener() {
+            @Override
+            public void onIndexChangeListener(RangeBar rangeBar, int i, int i1) {
+                removeFeaturesFromLayer();
+                long startTime = System.currentTimeMillis() + i * _30MIN_IN_MILLIS - _24HOURS_IN_MILLIS;
+                long endTime = System.currentTimeMillis() + (i1 + 1) * _30MIN_IN_MILLIS - _24HOURS_IN_MILLIS;
+                drawFeatureEvolutions((Event) ((EvolutionActivity) getContext()).getIntent().getExtras().get("event"),
+                        startTime, endTime);
+                setStartEndBeginTime(startTime, endTime);
+            }
+        });
+    }
+
+    private void setRangeBarStartEndTime(int startEndTime, Date date) {
+        DateFormat dateFormat = new SimpleDateFormat("dd.MMM HH:mm");
+        getRangeBarTextView(startEndTime).setText(dateFormat.format(date));
+    }
+
+    private void setStartEndBeginTime(long begin, long end) {
+        Date date = new Date();
+        date.setTime(begin);
+        setRangeBarStartEndTime(STARTTIME_INDEX, date);
+        date.setTime(end);
+        setRangeBarStartEndTime(ENDTIME_INDEX, date);
     }
 
     public void handleFeatureGroupVisible(final Event event, final long featureId) {
