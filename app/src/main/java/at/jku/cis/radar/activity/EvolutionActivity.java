@@ -5,14 +5,12 @@ import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.ImageView;
-import android.widget.RelativeLayout;
-import android.widget.SeekBar;
 
 import com.google.android.gms.maps.MapFragment;
 
 import at.jku.cis.radar.R;
 import at.jku.cis.radar.model.Event;
+import at.jku.cis.radar.timer.CountDownRunner;
 import at.jku.cis.radar.view.EvolutionView;
 
 public class EvolutionActivity extends AppCompatActivity {
@@ -22,7 +20,13 @@ public class EvolutionActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_evolution);
         initializeEvolutionView();
+
+        Thread myThread = null;
+        Runnable myRunnableThread = new CountDownRunner(this, findEvolutionView());
+        myThread = new Thread(myRunnableThread);
+        myThread.start();
     }
+
 
     @Override
     protected void onResume() {
@@ -49,16 +53,22 @@ public class EvolutionActivity extends AppCompatActivity {
 
     private void evolveFeature(Bundle extras) {
         Event event = (Event) extras.getSerializable("event");
-        EvolutionView evolutionView = (EvolutionView) findViewById(R.id.mapView);
+        EvolutionView evolutionView = findEvolutionView();
         evolutionView.handleFeatureGroupVisible(event, Long.valueOf(extras.getString("featureId")));
     }
 
     private void initializeEvolutionView() {
         MapFragment mapFragment = MapFragment.newInstance();
-        mapFragment.getMapAsync((EvolutionView) findViewById(R.id.mapView));
+        mapFragment.getMapAsync(findEvolutionView());
         FragmentTransaction fragmentTransaction =
                 getFragmentManager().beginTransaction();
         fragmentTransaction.add(R.id.mapView, mapFragment);
         fragmentTransaction.commit();
     }
+
+    private EvolutionView findEvolutionView() {
+        return (EvolutionView) findViewById(R.id.mapView);
+    }
+
+
 }

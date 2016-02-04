@@ -64,6 +64,7 @@ public class EvolutionView extends MapView implements OnMapReadyCallback {
                 removeFeaturesFromLayer();
                 drawFeatureEvolutions((Event) ((EvolutionActivity) getContext()).getIntent().getExtras().get("event"),
                         System.currentTimeMillis() + i * _30MIN_IN_MILLIS - _24HOURS_IN_MILLIS, System.currentTimeMillis() + (i1 + 1) * _30MIN_IN_MILLIS - _24HOURS_IN_MILLIS);
+
             }
         });
     }
@@ -100,7 +101,7 @@ public class EvolutionView extends MapView implements OnMapReadyCallback {
         Collections.sort(geoJsonFeatures, new Comparator<GeoJsonFeature>() {
             @Override
             public int compare(GeoJsonFeature lhs, GeoJsonFeature rhs) {
-                return (int) (Long.parseLong(lhs.getProperty("date")) - Long.parseLong(rhs.getProperty("date")));
+                return (int) (Long.parseLong(rhs.getProperty("date")) - Long.parseLong(lhs.getProperty("date")));
             }
         });
         CollectionUtils.filter(geoJsonFeatures, new Predicate<GeoJsonFeature>() {
@@ -118,10 +119,10 @@ public class EvolutionView extends MapView implements OnMapReadyCallback {
             style.setStrokeColor(Color.argb(a, r, g, b));
             style.setFillColor(Color.argb(a, r, g, b));
             geoJsonFeature.setPolygonStyle(style);
-            r = (int) (r * 0.8);
-            g = (int) (g * 0.8);
-            b = (int) (b * 0.8);
-            a = (int) (a * 0.8);
+            r = (int) (r * 0.9);
+            g = (int) (g * 0.9);
+            b = (int) (b * 0.9);
+            a = (int) (a * 0.9);
             geoJsonLayer.addFeature(geoJsonFeature);
         }
     }

@@ -15,6 +15,7 @@ import at.jku.cis.radar.model.ApplicationMode;
 import at.jku.cis.radar.model.DrawType;
 import at.jku.cis.radar.model.PenMode;
 import at.jku.cis.radar.model.PenSetting;
+import at.jku.cis.radar.timer.CountDownRunner;
 import at.jku.cis.radar.view.EventTreeFragment;
 import at.jku.cis.radar.view.GoogleView;
 
@@ -26,6 +27,12 @@ public class RadarActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_radar);
+
+        Thread myThread = null;
+        Runnable myRunnableThread = new CountDownRunner(this, findGoogleView());
+        myThread = new Thread(myRunnableThread);
+        myThread.start();
+
         initializeSideBar();
         initializeGoogleMap();
     }
@@ -84,7 +91,6 @@ public class RadarActivity extends AppCompatActivity {
             public boolean onMenuItemClick(MenuItem item) {
                 PenSetting penSetting = findGoogleView().getPenSetting();
                 deactivateDrawMenuItems(menu);
-                //item.setIcon(R.drawable.polygon_icon_activated);
                 item.setIcon(R.drawable.polygonselected);
                 menu.findItem(R.id.erase).setIcon(R.drawable.pen_icon);
 
@@ -136,11 +142,10 @@ public class RadarActivity extends AppCompatActivity {
     }
 
     private void deactivateDrawMenuItems(Menu menu) {
-        //menu.findItem(R.id.polygon).setIcon(R.drawable.polygon_icon);
         menu.findItem(R.id.polygon).setIcon(R.drawable.polygonnotselected);
-
         menu.findItem(R.id.line).setIcon(R.drawable.line_icon);
-        //menu.findItem(R.id.marker).setIcon(R.drawable.marker_icon);
         menu.findItem(R.id.marker).setIcon(R.drawable.markernotselected);
     }
+
+
 }
