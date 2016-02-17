@@ -17,7 +17,7 @@ import at.jku.cis.radar.service.PolygonRepairerService;
 
 
 public class GeometryUtils {
-    private final static int MAX_UNION_TRIES = 10;
+    private final static int MAX_UNION_TRIES = 100;
 
     public static boolean intersects(GeometryCollection geometryCollection, Geometry intersectionGeometry) {
         for (int i = 0; i < geometryCollection.getNumGeometries(); i++) {
@@ -52,8 +52,28 @@ public class GeometryUtils {
             }
             collection = removeHoles(collection);
             unionTries++;
-        } while (selfIntersection(collection) && unionTries < MAX_UNION_TRIES);
+            if(!selfIntersection(collection)){
+                break;
+            }
+        } while (unionTries < MAX_UNION_TRIES);
+        if(selfIntersection(collection)){
+            convexHull(collection);
+        }
         return collection;
+    }
+
+    private static void convexHull(Geometry geometry){
+        Geometry[] geometries = new Geometry[geometry.getNumGeometries()];
+        for(int i = 0; i < geometry.getNumGeometries(); i++){
+            Geometry geometry1 = geometry.getGeometryN(i);
+            if(geometry1.getNumGeometries() > 1){
+                convexHull(geometry1);
+            } else{
+                geometry1 = geometry1.convexHull();
+            }
+            geometries[i] = geometry1;
+        }
+        geometry = new GeometryCollection(geometries, new GeometryFactory());
     }
 
     private static boolean selfIntersection(GeometryCollection geometryCollection) {

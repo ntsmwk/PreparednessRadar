@@ -13,6 +13,7 @@ import android.widget.Toast;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.OnMapReadyCallback;
+import com.google.android.gms.maps.Projection;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.maps.android.geojson.GeoJsonFeature;
 import com.google.maps.android.geojson.GeoJsonGeometry;
@@ -71,6 +72,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     private GeoJsonFeature currentFeature;
     private GeoJsonGeometryBuilder geoJsonGeometryBuilder;
     private Map<Event, GeoJsonLayer> event2GeoJsonLayer = new HashMap<>();
+    private Projection googleMapProjection;
 
     public GoogleView(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -141,7 +143,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         super.onCreateContextMenu(menu);
     }
 
-    public void onConextItemSelected(MenuItem item) {
+    public void onContextItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case 0:
                 setCurrentFeature(null);
@@ -222,23 +224,23 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
     private void dispatchStylusTouchEvent(MotionEvent motionEvent) {
         Point point = new Point((int) motionEvent.getX(), (int) motionEvent.getY());
-        LatLng latLng = googleMap.getProjection().fromScreenLocation(point);
+        //LatLng latLng = googleMap.getProjection().fromScreenLocation(point);
 
         if (PenMode.ERASING == penSetting.getPenMode()) {
-            doErasing(motionEvent.getAction(), latLng);
+            doErasing(motionEvent.getAction(), point);
         } else {
-            doPainting(motionEvent.getAction(), latLng);
+            doPainting(motionEvent.getAction(), point);
         }
     }
 
-    private void doPainting(int action, LatLng latLng) {
+    private void doPainting(int action, Point point) {
         if (MotionEvent.ACTION_DOWN == action) {
             geoJsonGeometryBuilder = new GeoJsonGeometryBuilder(penSetting.getDrawType());
+            googleMapProjection = googleMap.getProjection();
         }
-        geoJsonGeometryBuilder.addCoordinate(latLng);
+        geoJsonGeometryBuilder.addCoordinate(googleMapProjection.fromScreenLocation(point));
         if (MotionEvent.ACTION_UP == action) {
             GeoJsonGeometryCollection geoJsonGeometry = geoJsonGeometryBuilder.build();
-
             if (ApplicationMode.CREATING == applicationMode) {
                 doCreateModePainting(geoJsonGeometry);
             } else if (ApplicationMode.EDITING == applicationMode) {
@@ -249,11 +251,12 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         }
     }
 
-    private void doErasing(int action, LatLng latLng) {
+    private void doErasing(int action, Point point) {
         if (MotionEvent.ACTION_DOWN == action) {
             geoJsonGeometryBuilder = new GeoJsonGeometryBuilder(DrawType.POLYGON);
+            googleMapProjection = googleMap.getProjection();
         }
-        geoJsonGeometryBuilder.addCoordinate(latLng);
+        geoJsonGeometryBuilder.addCoordinate(googleMapProjection.fromScreenLocation(point));
         if (MotionEvent.ACTION_UP == action) {
             GeoJsonLayer geoJsonLayer = getCorrespondingGeoJsonLayer();
             GeoJsonGeometryCollection geoJsonGeometry = geoJsonGeometryBuilder.build();
@@ -268,6 +271,8 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     }
 
     private void doCreateModePainting(GeoJsonGeometryCollection geoJsonGeometry) {
+        GeometryCollection geometry = (GeometryCollection) new GeoJsonGeometry2GeometryTransformer().transform(geoJsonGeometry);
+        GeometryUtils.union(geometry);
         saveCreatedFeature(new GeoJsonFeatureBuilder(geoJsonGeometry).setColor(penSetting.getEvent().getColor()).build("-1"));
     }
 
@@ -314,6 +319,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         geoJsonIntersectionRemover.intersectGeoJsonFeatures();
         new RemoveGeometryEvolveCommand(getCorrespondingGeoJsonLayer(), geoJsonIntersectionRemover.getAddList(), geoJsonIntersectionRemover.getRemoveList()).doCommand();
         for (GeoJsonFeature geoJsonFeature : geoJsonIntersectionRemover.getAddList()) {
+
             saveEvolvedFeature(geoJsonFeature);
         }
     }
@@ -340,6 +346,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
     private void saveEditedFeature(GeoJsonFeature geoJsonFeature) {
         FeaturesRestApi featuresRestApi = RestServiceGenerator.createService(FeaturesRestApi.class);
+        geoJsonFeature.setProperty("PenAction", "Created");
         JSONObject jsonFeature = new GeoJsonFeature2JsonObjectTransformer().transform(geoJsonFeature);
         featuresRestApi.updateFeature(penSetting.getEvent().getId(), jsonFeature, new Callback() {
 

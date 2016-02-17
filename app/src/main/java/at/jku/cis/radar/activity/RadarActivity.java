@@ -34,7 +34,7 @@ public class RadarActivity extends AppCompatActivity {
 
     @Override
     public boolean onContextItemSelected(MenuItem item) {
-        findGoogleView().onConextItemSelected(item);
+        findGoogleView().onContextItemSelected(item);
         return super.onContextItemSelected(item);
     }
 
