@@ -23,6 +23,9 @@ public class RadarActivity extends AppCompatActivity {
     public static final float ALPHA_VISIBLE = 1.0f;
     public static final float ALPHA_HIDDEN = 0.2f;
 
+    private boolean contextMenuSelected = false;
+    private boolean contextNenuClosed = false;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,6 +37,7 @@ public class RadarActivity extends AppCompatActivity {
 
     @Override
     public boolean onContextItemSelected(MenuItem item) {
+        contextMenuSelected = true;
         findGoogleView().onContextItemSelected(item);
         return super.onContextItemSelected(item);
     }
@@ -41,7 +45,12 @@ public class RadarActivity extends AppCompatActivity {
     @Override
     public void onContextMenuClosed(Menu menu) {
         super.onContextMenuClosed(menu);
-        handleApplicationModeChanged(findGoogleView().getApplicationMode());
+        if (!contextMenuSelected) {
+            GoogleView googleView = findGoogleView();
+            googleView.onContextMenuClosed();
+            handleApplicationModeChanged(googleView.getApplicationMode());
+        }
+        contextMenuSelected = false;
     }
 
     private void handleApplicationModeChanged(ApplicationMode applicationMode) {
