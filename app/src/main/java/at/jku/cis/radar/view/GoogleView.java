@@ -44,7 +44,6 @@ import at.jku.cis.radar.command.RemoveGeometryEditCommand;
 import at.jku.cis.radar.command.RemoveGeometryEvolveCommand;
 import at.jku.cis.radar.geometry.GeometryUtils;
 import at.jku.cis.radar.model.ApplicationMode;
-import at.jku.cis.radar.model.AuthenticationToken;
 import at.jku.cis.radar.model.DrawType;
 import at.jku.cis.radar.model.Event;
 import at.jku.cis.radar.model.PenMode;
@@ -137,9 +136,20 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     @Override
     protected void onCreateContextMenu(ContextMenu menu) {
         menu.setHeaderTitle(R.string.context_menu);
-        menu.add(NO_ID, 0, 0, R.string.create);
-        menu.add(NO_ID, 1, 0, R.string.edit);
-        menu.add(NO_ID, 2, 0, R.string.evolve);
+        switch (applicationMode) {
+            case CREATING:
+                menu.add(NO_ID, 1, 0, R.string.edit);
+                menu.add(NO_ID, 2, 0, R.string.evolve);
+                break;
+            case EDITING:
+                menu.add(NO_ID, 0, 0, R.string.create);
+                menu.add(NO_ID, 2, 0, R.string.evolve);
+                break;
+            case EVOLVING:
+                menu.add(NO_ID, 0, 0, R.string.create);
+                menu.add(NO_ID, 1, 0, R.string.edit);
+                break;
+        }
         menu.add(NO_ID, 3, 0, R.string.evolution);
         super.onCreateContextMenu(menu);
     }
@@ -161,6 +171,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
                 Intent intent = new Intent(getContext(), EvolutionActivity.class);
                 intent.putExtra("event", penSetting.getEvent());
                 intent.putExtra("featureId", currentFeature.getId());
+                intent.putExtra("token", determineToken());
                 setCurrentFeature(null);
                 ((RadarActivity) getContext()).startActivity(intent);
                 break;
@@ -422,8 +433,6 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     }
 
     private String determineToken() {
-        Intent intent = ((RadarActivity) getContext()).getIntent();
-        String name = AuthenticationToken.class.getSimpleName();
-        return ((AuthenticationToken) intent.getSerializableExtra(name)).getValue();
+        return (String) ((RadarActivity) getContext()).getIntent().getStringExtra("token");
     }
 }
