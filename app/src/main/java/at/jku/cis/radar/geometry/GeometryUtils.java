@@ -57,12 +57,12 @@ public class GeometryUtils {
             }
         } while (unionTries < MAX_UNION_TRIES);
         if(selfIntersection(collection)){
-            convexHull(collection);
+            collection = convexHull(collection);
         }
         return collection;
     }
 
-    private static void convexHull(Geometry geometry){
+    private static GeometryCollection convexHull(Geometry geometry){
         Geometry[] geometries = new Geometry[geometry.getNumGeometries()];
         for(int i = 0; i < geometry.getNumGeometries(); i++){
             Geometry geometry1 = geometry.getGeometryN(i);
@@ -73,7 +73,7 @@ public class GeometryUtils {
             }
             geometries[i] = geometry1;
         }
-        geometry = new GeometryCollection(geometries, new GeometryFactory());
+        return new GeometryCollection(geometries, new GeometryFactory());
     }
 
     private static boolean selfIntersection(GeometryCollection geometryCollection) {

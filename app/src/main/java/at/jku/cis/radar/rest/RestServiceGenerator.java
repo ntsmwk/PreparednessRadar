@@ -1,7 +1,7 @@
 package at.jku.cis.radar.rest;
 
-import at.jku.cis.radar.converter.RadarJacksonConverter;
-import retrofit.RestAdapter;
+        import at.jku.cis.radar.converter.RadarJacksonConverter;
+        import retrofit.RestAdapter;
 
 public class RestServiceGenerator {
 
