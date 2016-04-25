@@ -6,7 +6,7 @@ import retrofit.RestAdapter;
 
 public class RestServiceGenerator {
 
-    private static final String BASE_URL = "http://10.0.0.12:8080/rest";
+    private static final String BASE_URL = "http://192.168.43.103:8080/rest";
 
     private static RestAdapter.Builder builder = new RestAdapter.Builder()
             .setEndpoint(BASE_URL).setConverter(new RadarJacksonConverter());

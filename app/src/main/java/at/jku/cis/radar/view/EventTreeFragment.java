@@ -30,9 +30,6 @@ import at.jku.cis.radar.rest.RestServiceGenerator;
 
 public class EventTreeFragment extends Fragment implements ExpandableListView.OnChildClickListener {
 
-    private static final String EVENT_TREE_XML = "eventTree.xml";
-    private static final String TAG = "EventTree";
-
     private List<Event> events = new ArrayList<>();
     private List<EventClickListener> eventClickListeners = new ArrayList<>();
     private boolean disabled = false;
@@ -42,7 +39,6 @@ public class EventTreeFragment extends Fragment implements ExpandableListView.On
     @Override
     public View onCreateView(final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_selectable_nodes, container, false);
-        //events = parseEvents(inflater);
         expandableListView = (ExpandableListView) rootView.findViewById(R.id.lvExp);
         expandableListView.setOnChildClickListener(this);
         expandableListView.setAdapter(new EventExpandableListAdapter());
@@ -56,13 +52,13 @@ public class EventTreeFragment extends Fragment implements ExpandableListView.On
             ExecutorService executorService = Executors.newCachedThreadPool();
             events = new EventsTask(determineToken()).executeOnExecutor(executorService).get();
         } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
         }
     }
 
     private String determineToken() {
         Intent intent = getActivity().getIntent();
-        String name = AuthenticationToken.class.getSimpleName();
-        return ((AuthenticationToken) intent.getSerializableExtra(name)).getValue();
+        return ((AuthenticationToken) intent.getSerializableExtra(AuthenticationToken.class.getSimpleName())).getValue();
     }
 
     public void addEventClickListener(EventClickListener eventClickListener) {
@@ -73,7 +69,7 @@ public class EventTreeFragment extends Fragment implements ExpandableListView.On
 
         private final String token;
 
-        public EventsTask(String token) {
+        private EventsTask(String token) {
             this.token = token;
         }
 
@@ -82,8 +78,6 @@ public class EventTreeFragment extends Fragment implements ExpandableListView.On
             return RestServiceGenerator.createService(EventsRestApi.class, token).getEvents();
         }
     }
-
-
 
     @Override
     public boolean onChildClick(ExpandableListView parent, View view, int groupPosition, int childPosition, long id) {

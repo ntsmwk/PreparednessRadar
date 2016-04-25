@@ -1,7 +1,10 @@
 package at.jku.cis.radar.view;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
+import android.os.AsyncTask;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.ViewGroup;
@@ -30,8 +33,11 @@ import java.util.concurrent.ExecutionException;
 
 import at.jku.cis.radar.R;
 import at.jku.cis.radar.activity.EvolutionActivity;
+import at.jku.cis.radar.model.AuthenticationToken;
 import at.jku.cis.radar.model.Event;
-import at.jku.cis.radar.task.GetFeaturesEvolutionTask;
+import at.jku.cis.radar.rest.FeaturesEvolutionRestApi;
+import at.jku.cis.radar.rest.RestServiceGenerator;
+import at.jku.cis.radar.transformer.JsonObject2GeoJsonFeatureTransformer;
 
 
 public class EvolutionView extends MapView implements OnMapReadyCallback {
@@ -40,6 +46,7 @@ public class EvolutionView extends MapView implements OnMapReadyCallback {
     public static final int ENDTIME_INDEX = 2;
     private static final int _24HOURS_IN_MILLIS = 24 * 60 * 60 * 1000;
     private static final int _30MIN_IN_MILLIS = 30 * 60 * 1000;
+
     private GeoJsonLayer geoJsonLayer;
     private GoogleMap googleMap;
 
@@ -137,7 +144,7 @@ public class EvolutionView extends MapView implements OnMapReadyCallback {
 
     private List<GeoJsonFeature> loadGeoJsonFeatures() {
         try {
-            return new GetFeaturesEvolutionTask().execute(event.getId(), featureId).get();
+            return new GetFeaturesEvolutionTask(event, featureId, determineToken()).execute().get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -174,4 +181,31 @@ public class EvolutionView extends MapView implements OnMapReadyCallback {
         this.event = event;
         this.featureId = featureId;
     }
+
+    private String determineToken() {
+        Intent intent = ((Activity) getContext()).getIntent();
+        String name = AuthenticationToken.class.getSimpleName();
+        return ((AuthenticationToken) intent.getSerializableExtra(name)).getValue();
+    }
+
+    private class GetFeaturesEvolutionTask extends AsyncTask<Void, Void, List<GeoJsonFeature>> {
+
+        private final Event event;
+        private final long featureId;
+        private final String token;
+
+        public GetFeaturesEvolutionTask(Event event, long featureId, String token) {
+            this.event = event;
+            this.featureId = featureId;
+            this.token = token;
+        }
+
+        @Override
+        protected List<GeoJsonFeature> doInBackground(Void... params) {
+            FeaturesEvolutionRestApi featuresEvolutionRest = RestServiceGenerator.createService(FeaturesEvolutionRestApi.class, token);
+            return new JsonObject2GeoJsonFeatureTransformer().transform(featuresEvolutionRest.getFeaturesEvolution(event.getId(), featureId));
+        }
+    }
+
+
 }
