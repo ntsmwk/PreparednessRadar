@@ -1,9 +1,11 @@
 package at.jku.cis.radar.view;
 
 import android.app.Fragment;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -21,13 +23,12 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import at.jku.cis.radar.R;
+import at.jku.cis.radar.model.AuthenticationToken;
 import at.jku.cis.radar.model.Event;
-import at.jku.cis.radar.task.GetEventsTask;
+import at.jku.cis.radar.rest.EventsRestApi;
+import at.jku.cis.radar.rest.RestServiceGenerator;
 
 public class EventTreeFragment extends Fragment implements ExpandableListView.OnChildClickListener {
-
-    private static final String EVENT_TREE_XML = "eventTree.xml";
-    private static final String TAG = "EventTree";
 
     private List<Event> events = new ArrayList<>();
     private List<EventClickListener> eventClickListeners = new ArrayList<>();
@@ -38,7 +39,6 @@ public class EventTreeFragment extends Fragment implements ExpandableListView.On
     @Override
     public View onCreateView(final LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View rootView = inflater.inflate(R.layout.fragment_selectable_nodes, container, false);
-        //events = parseEvents(inflater);
         expandableListView = (ExpandableListView) rootView.findViewById(R.id.lvExp);
         expandableListView.setOnChildClickListener(this);
         expandableListView.setAdapter(new EventExpandableListAdapter());
@@ -50,26 +50,33 @@ public class EventTreeFragment extends Fragment implements ExpandableListView.On
         super.onStart();
         try {
             ExecutorService executorService = Executors.newCachedThreadPool();
-            events = new GetEventsTask().executeOnExecutor(executorService).get();
-            //for (final Event event : events) {
-            //    new AsyncTask<Void, Void, Void>() {
-            //
-            //        @Override
-            //        protected Void doInBackground(Void... _void) {
-            //            System.out.println("Task: " + event.getName());
-            //            for (EventClickListener eventClickListener : eventClickListeners) {
-            //                eventClickListener.handleEventLoaded(event);
-            //            }
-            //            return null;
-            //        }
-            //    }.executeOnExecutor(executorService).get(10, TimeUnit.SECONDS);
-            //}
+            events = new EventsTask(determineToken()).executeOnExecutor(executorService).get();
         } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
         }
+    }
+
+    private String determineToken() {
+        Intent intent = getActivity().getIntent();
+        return ((AuthenticationToken) intent.getSerializableExtra(AuthenticationToken.class.getSimpleName())).getValue();
     }
 
     public void addEventClickListener(EventClickListener eventClickListener) {
         eventClickListeners.add(eventClickListener);
+    }
+
+    private class EventsTask extends AsyncTask<Void, Void, List<Event>> {
+
+        private final String token;
+
+        private EventsTask(String token) {
+            this.token = token;
+        }
+
+        @Override
+        protected List<Event> doInBackground(Void... params) {
+            return RestServiceGenerator.createService(EventsRestApi.class, token).getEvents();
+        }
     }
 
     @Override

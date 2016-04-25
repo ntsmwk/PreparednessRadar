@@ -3,6 +3,7 @@ package at.jku.cis.radar.view;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Point;
+import android.os.AsyncTask;
 import android.util.AttributeSet;
 import android.util.Log;
 import android.view.ContextMenu;
@@ -37,6 +38,7 @@ import at.jku.cis.radar.activity.EvolutionActivity;
 import at.jku.cis.radar.activity.RadarActivity;
 import at.jku.cis.radar.geometry.GeometryUtils;
 import at.jku.cis.radar.model.ApplicationMode;
+import at.jku.cis.radar.model.AuthenticationToken;
 import at.jku.cis.radar.model.DrawType;
 import at.jku.cis.radar.model.Event;
 import at.jku.cis.radar.model.PenMode;
@@ -47,7 +49,6 @@ import at.jku.cis.radar.service.FeatureStyleService;
 import at.jku.cis.radar.service.GeoJsonFeatureBuilder;
 import at.jku.cis.radar.service.GeoJsonGeometryBuilder;
 import at.jku.cis.radar.service.GeoJsonIntersectionRemover;
-import at.jku.cis.radar.task.GetFeaturesTask;
 import at.jku.cis.radar.transformer.GeoJsonFeature2JsonObjectTransformer;
 import at.jku.cis.radar.transformer.GeoJsonGeometry2GeometryTransformer;
 import at.jku.cis.radar.transformer.Geometry2GeoJsonGeometryTransformer;
@@ -157,7 +158,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
                 intent.putExtra("event", penSetting.getEvent());
                 intent.putExtra("featureId", currentFeature.getId());
                 setCurrentFeature(null);
-                getActivity().startActivity(intent);
+                ((RadarActivity) getContext()).startActivity(intent);
                 break;
         }
     }
@@ -365,7 +366,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
 
     private void saveCreatedFeature(final GeoJsonFeature geoJsonFeature) {
-        FeaturesRestApi featuresRestApi = RestServiceGenerator.createService(FeaturesRestApi.class);
+        FeaturesRestApi featuresRestApi = RestServiceGenerator.createService(FeaturesRestApi.class, determineToken());
         JSONObject jsonFeature = new GeoJsonFeature2JsonObjectTransformer().transform(geoJsonFeature);
         featuresRestApi.saveFeature(penSetting.getEvent().getId(), jsonFeature, new Callback() {
 
@@ -385,7 +386,8 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     }
 
     private void saveEditedFeature(GeoJsonFeature geoJsonFeature) {
-        FeaturesRestApi featuresRestApi = RestServiceGenerator.createService(FeaturesRestApi.class);
+        FeaturesRestApi featuresRestApi = RestServiceGenerator.createService(FeaturesRestApi.class, determineToken());
+        geoJsonFeature.setProperty("PenAction", "Created");
         JSONObject jsonFeature = new GeoJsonFeature2JsonObjectTransformer().transform(geoJsonFeature);
         featuresRestApi.updateFeature(penSetting.getEvent().getId(), jsonFeature, new Callback() {
 
@@ -403,7 +405,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     }
 
     private void saveEvolvedFeature(GeoJsonFeature geoJsonFeature) {
-        FeaturesRestApi featuresRestApi = RestServiceGenerator.createService(FeaturesRestApi.class);
+        FeaturesRestApi featuresRestApi = RestServiceGenerator.createService(FeaturesRestApi.class, determineToken());
         JSONObject jsonFeature = new GeoJsonFeature2JsonObjectTransformer().transform(geoJsonFeature);
         featuresRestApi.saveFeature(penSetting.getEvent().getId(), jsonFeature, new Callback() {
 
@@ -433,9 +435,9 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
     private JSONObject loadFeatures(Event event) {
         try {
-            return new GetFeaturesTask().execute(event.getId()).get();
+            return new GetFeaturesTask(event, determineToken()).execute().get();
         } catch (InterruptedException | ExecutionException e) {
-            return new JSONObject();
+            throw new RuntimeException(e);
         }
     }
 
@@ -473,7 +475,26 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         getCorrespondingGeoJsonLayer().addLayerToMap();
     }
 
-    private RadarActivity getActivity() {
-        return (RadarActivity) getContext();
+
+    private class GetFeaturesTask extends AsyncTask<Void, Void, JSONObject> {
+
+        private final Event event;
+        private final String token;
+
+        public GetFeaturesTask(Event event, String token) {
+            this.event = event;
+            this.token = token;
+        }
+
+        @Override
+        protected JSONObject doInBackground(Void... params) {
+            return RestServiceGenerator.createService(FeaturesRestApi.class, token).getFeatures(event.getId());
+        }
+    }
+
+    private String determineToken() {
+        Intent intent = ((RadarActivity) getContext()).getIntent();
+        String name = AuthenticationToken.class.getSimpleName();
+        return ((AuthenticationToken) intent.getSerializableExtra(name)).getValue();
     }
 }
