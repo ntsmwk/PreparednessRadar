@@ -1,7 +1,6 @@
 package at.jku.cis.radar.view;
 
 import android.app.Fragment;
-import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
@@ -23,7 +22,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import at.jku.cis.radar.R;
-import at.jku.cis.radar.model.AuthenticationToken;
 import at.jku.cis.radar.model.Event;
 import at.jku.cis.radar.rest.EventsRestApi;
 import at.jku.cis.radar.rest.RestServiceGenerator;
@@ -49,16 +47,12 @@ public class EventTreeFragment extends Fragment implements ExpandableListView.On
     public void onStart() {
         super.onStart();
         try {
+            String token = getActivity().getIntent().getStringExtra("token");
             ExecutorService executorService = Executors.newCachedThreadPool();
-            events = new EventsTask(determineToken()).executeOnExecutor(executorService).get();
+            events = new EventsTask(token).executeOnExecutor(executorService).get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    private String determineToken() {
-        Intent intent = getActivity().getIntent();
-        return ((AuthenticationToken) intent.getSerializableExtra(AuthenticationToken.class.getSimpleName())).getValue();
     }
 
     public void addEventClickListener(EventClickListener eventClickListener) {

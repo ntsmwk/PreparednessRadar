@@ -1,6 +1,5 @@
 package at.jku.cis.radar.activity;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
@@ -14,7 +13,6 @@ import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
-import java.io.Serializable;
 import java.math.BigInteger;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -108,7 +106,7 @@ public class LoginActivity extends AppCompatActivity {
         protected void onPostExecute(final Boolean success) {
             if (success) {
                 Intent intent = new Intent(getBaseContext(), RadarActivity.class);
-                intent.putExtra(AuthenticationToken.class.getSimpleName(), (Serializable) authenticationToken);
+                intent.putExtra("token", authenticationToken.getValue());
                 startActivity(intent);
                 finishActivity(Intent.FLAG_ACTIVITY_NO_HISTORY);
             } else {

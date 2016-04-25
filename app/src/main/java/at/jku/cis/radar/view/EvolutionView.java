@@ -2,7 +2,6 @@ package at.jku.cis.radar.view;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.graphics.Color;
 import android.os.AsyncTask;
 import android.support.annotation.Nullable;
@@ -33,9 +32,8 @@ import java.util.concurrent.ExecutionException;
 
 import at.jku.cis.radar.R;
 import at.jku.cis.radar.activity.EvolutionActivity;
-import at.jku.cis.radar.model.AuthenticationToken;
 import at.jku.cis.radar.model.Event;
-import at.jku.cis.radar.rest.FeaturesEvolutionRestApi;
+import at.jku.cis.radar.rest.FeatureEvolutionRestApi;
 import at.jku.cis.radar.rest.RestServiceGenerator;
 import at.jku.cis.radar.transformer.JsonObject2GeoJsonFeatureTransformer;
 
@@ -144,7 +142,8 @@ public class EvolutionView extends MapView implements OnMapReadyCallback {
 
     private List<GeoJsonFeature> loadGeoJsonFeatures() {
         try {
-            return new GetFeaturesEvolutionTask(event, featureId, determineToken()).execute().get();
+            String token = ((Activity) getContext()).getIntent().getStringExtra("token");
+            return new GetFeaturesEvolutionTask(event, featureId, token).execute().get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
         }
@@ -182,12 +181,6 @@ public class EvolutionView extends MapView implements OnMapReadyCallback {
         this.featureId = featureId;
     }
 
-    private String determineToken() {
-        Intent intent = ((Activity) getContext()).getIntent();
-        String name = AuthenticationToken.class.getSimpleName();
-        return ((AuthenticationToken) intent.getSerializableExtra(name)).getValue();
-    }
-
     private class GetFeaturesEvolutionTask extends AsyncTask<Void, Void, List<GeoJsonFeature>> {
 
         private final Event event;
@@ -202,7 +195,7 @@ public class EvolutionView extends MapView implements OnMapReadyCallback {
 
         @Override
         protected List<GeoJsonFeature> doInBackground(Void... params) {
-            FeaturesEvolutionRestApi featuresEvolutionRest = RestServiceGenerator.createService(FeaturesEvolutionRestApi.class, token);
+            FeatureEvolutionRestApi featuresEvolutionRest = RestServiceGenerator.createService(FeatureEvolutionRestApi.class, token);
             return new JsonObject2GeoJsonFeatureTransformer().transform(featuresEvolutionRest.getFeaturesEvolution(event.getId(), featureId));
         }
     }
