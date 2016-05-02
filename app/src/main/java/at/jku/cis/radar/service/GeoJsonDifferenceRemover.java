@@ -7,7 +7,6 @@ import com.google.maps.android.geojson.GeoJsonFeature;
 import com.google.maps.android.geojson.GeoJsonGeometry;
 import com.google.maps.android.geojson.GeoJsonGeometryCollection;
 import com.vividsolutions.jts.geom.Geometry;
-import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.MultiPolygon;
 import com.vividsolutions.jts.geom.Polygon;
@@ -25,73 +24,84 @@ import at.jku.cis.radar.transformer.GeoJsonGeometry2GeometryTransformer;
 import at.jku.cis.radar.transformer.Geometry2GeoJsonGeometryTransformer;
 import at.jku.cis.radar.view.GoogleView;
 
-public class GeoJsonIntersectionRemover {
-    private static final String TAG = "IntersectionRemover";
+public class GeoJsonDifferenceRemover {
+    private static final String TAG = "DifferenceRemover";
 
     private Iterable<GeoJsonFeature> features;
-    private GeoJsonGeometry geoJsonIntersectionGeometry;
+    private GeoJsonGeometry geoJsonRemoveGeometry;
 
     private List<GeoJsonFeature> addList = new ArrayList<>();
     private List<GeoJsonFeature> removeList = new ArrayList<>();
     private List<GeoJsonFeature> prevList = new ArrayList<>();
+    private List<GeoJsonFeature> intersectionList = new ArrayList<>();
 
-    public GeoJsonIntersectionRemover(Iterable<GeoJsonFeature> features, GeoJsonGeometry geoJsonIntersectionGeometry) {
+    public GeoJsonDifferenceRemover(Iterable<GeoJsonFeature> features, GeoJsonGeometry geoJsonRemoveGeometry) {
         this.features = features;
-        this.geoJsonIntersectionGeometry = geoJsonIntersectionGeometry;
+        this.geoJsonRemoveGeometry = geoJsonRemoveGeometry;
     }
 
-    public GeoJsonIntersectionRemover(GeoJsonFeature feature, GeoJsonGeometry geoJsonIntersectionGeometry) {
-        this(Collections.singletonList(feature), geoJsonIntersectionGeometry);
+    public GeoJsonDifferenceRemover(GeoJsonFeature feature, GeoJsonGeometry geoJsonRemoveGeometry) {
+        this(Collections.singletonList(feature), geoJsonRemoveGeometry);
     }
 
 
-    public void intersectGeoJsonFeatures() {
-
+    public void removeDifference() {
         HashMap<String, String> addProperties = new HashMap<>();
         HashMap<String, String> removeProperties = new HashMap<>();
         removeProperties.put(GoogleView.STATUS_PROPERTY_NAME, GoogleView.STATUS_ERASED);
         addProperties.put(GoogleView.STATUS_PROPERTY_NAME, GoogleView.STATUS_CREATED);
 
-        Geometry intersectionGeometry = new GeoJsonGeometry2GeometryTransformer().transform(geoJsonIntersectionGeometry);
-        for (int i = 0; i < intersectionGeometry.getNumGeometries(); i++) {
+        Geometry removeGeometry = new GeoJsonGeometry2GeometryTransformer().transform(geoJsonRemoveGeometry);
+
+        for (int i = 0; i < removeGeometry.getNumGeometries(); i++) {
             for (GeoJsonFeature feature : features) {
+
                 Collection<Geometry> geometries = transformToGeometries(feature);
-                Collection<Geometry> addGeometries = differenceGeometry(intersectionGeometry.getGeometryN(i), geometries);
+                Collection<Geometry> addGeometries = differenceGeometry(removeGeometry.getGeometryN(i), geometries);
+                Collection<Geometry> intersectionGeometries = intersectionGeometry(removeGeometry.getGeometryN(i), geometries);
                 if (!addGeometries.isEmpty()) {
                     addList.add(transformToGeoJsonFeature(addGeometries, feature.getPolygonStyle().getFillColor(), feature.getId(), addProperties));
                 }
-                removeList.add(buildFeature(new GeoJsonGeometryCollection(Collections.singletonList(geoJsonIntersectionGeometry)), removeProperties, Color.TRANSPARENT, feature.getId()));
+                if(!intersectionGeometries.isEmpty()){
+                    intersectionList.add(transformToGeoJsonFeature(intersectionGeometries, Color.GRAY, feature.getId(), removeProperties));
+                }
+                removeList.add(buildFeature(new GeoJsonGeometryCollection(Collections.singletonList(geoJsonRemoveGeometry)), removeProperties, Color.TRANSPARENT, feature.getId()));
                 prevList.add(feature);
             }
         }
     }
 
-    private GeoJsonFeature buildFeature(GeoJsonGeometryCollection geometry, HashMap<String, String> properties, int color, String id) {
-        GeoJsonFeatureBuilder featureBuilder;
-        featureBuilder = new GeoJsonFeatureBuilder(geometry);
-        featureBuilder.setColor(color);
-        featureBuilder.setProperties(properties);
-        return featureBuilder.build(id);
-    }
-
-
-    private List<Geometry> differenceGeometry(Geometry geometryToIntersection, Collection<Geometry> geometries) {
+    private List<Geometry> differenceGeometry(Geometry removeGeometry, Collection<Geometry> geometries) {
         List<Geometry> geometryList = new ArrayList<>();
 
         for (Geometry geometry : geometries) {
             try {
-                if (geometry.intersects(geometryToIntersection)) {
-                    Geometry intersectionGeometry = geometry.difference(geometryToIntersection);
-                    if (intersectionGeometry instanceof Polygon && !intersectionGeometry.isEmpty()) {
-                        geometryList.add(createMultiPolygon(PolygonRepairerService.repair((Polygon) intersectionGeometry)));
-                    } else if (intersectionGeometry instanceof MultiPolygon && !intersectionGeometry.isEmpty()) {
-                        geometryList.add(createMultiPolygon(PolygonRepairerService.repair((MultiPolygon) intersectionGeometry)));
+                if (geometry.intersects(removeGeometry)) {
+                    Geometry differenceGeometry = geometry.difference(removeGeometry);
+                    if (differenceGeometry instanceof Polygon && !differenceGeometry.isEmpty()) {
+                        geometryList.add(createMultiPolygon(PolygonRepairerService.repair((Polygon) differenceGeometry)));
+                    } else if (differenceGeometry instanceof MultiPolygon && !differenceGeometry.isEmpty()) {
+                        geometryList.add(createMultiPolygon(PolygonRepairerService.repair((MultiPolygon) differenceGeometry)));
                     }
                 } else {
                     geometryList.add(geometry);
                 }
             } catch (TopologyException e) {
-                Log.e(TAG, "Could not intersect geometry[" + geometry.toString() + "]", e);
+                Log.e(TAG, "Could not calculate difference geometry[" + geometry.toString() + "]", e);
+            }
+        }
+        return geometryList;
+    }
+
+    private List<Geometry> intersectionGeometry(Geometry removeGeometry, Collection<Geometry> geometries){
+        List<Geometry> geometryList = new ArrayList<>();
+
+        for(Geometry geometry : geometries){
+            Geometry intersectionGeometry = geometry.intersection(removeGeometry);
+            if (intersectionGeometry instanceof Polygon && !intersectionGeometry.isEmpty()) {
+                geometryList.add(createMultiPolygon(PolygonRepairerService.repair((Polygon) intersectionGeometry)));
+            } else if (intersectionGeometry instanceof MultiPolygon && !intersectionGeometry.isEmpty()) {
+                geometryList.add(createMultiPolygon(PolygonRepairerService.repair((MultiPolygon) intersectionGeometry)));
             }
         }
         return geometryList;
@@ -108,30 +118,17 @@ public class GeoJsonIntersectionRemover {
         return new GeoJsonFeatureBuilder(geoJsonGeometryCollection).setColor(color).setProperties(properties).build(id);
     }
 
-    private List<Geometry> transformToGeometries(GeoJsonGeometry geoJsonEraseGeometry) {
-        Geometry geometry = new GeoJsonGeometry2GeometryTransformer().transform(geoJsonEraseGeometry);
-        if (geometry instanceof Polygon) {
-            return Collections.singletonList(geometry);
-        }
-        return transformToGeometries((MultiPolygon) geometry);
-    }
-
-    private List<Geometry> transformToGeometries(MultiPolygon geometry) {
-        List<Geometry> geometries = new ArrayList<>();
-        for (int i = 0; i < geometry.getNumGeometries(); i++) {
-            geometries.add(geometry.getGeometryN(i));
-        }
-        return geometries;
-    }
-
     private MultiPolygon createMultiPolygon(List<Polygon> polygons) {
         return new GeometryFactory().createMultiPolygon(polygons.toArray(new Polygon[polygons.size()]));
+    }
+
+    private GeoJsonFeature buildFeature(GeoJsonGeometryCollection geometry, HashMap<String, String> properties, int color, String id) {
+        return new GeoJsonFeatureBuilder(geometry).setColor(color).setProperties(properties).build(id);
     }
 
     public List<GeoJsonFeature> getAddList() {
         return addList;
     }
-
 
     public List<GeoJsonFeature> getPrevList() {
         return prevList;
@@ -140,4 +137,9 @@ public class GeoJsonIntersectionRemover {
     public List<GeoJsonFeature> getRemoveList() {
         return removeList;
     }
+
+    public List<GeoJsonFeature> getIntersectionList(){
+        return intersectionList;
+    }
+
 }

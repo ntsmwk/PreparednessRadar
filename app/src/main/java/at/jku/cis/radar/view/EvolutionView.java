@@ -53,7 +53,6 @@ public class EvolutionView extends MapView implements OnMapReadyCallback {
 
     public EvolutionView(Context context, AttributeSet attrs) {
         super(context, attrs);
-
     }
 
     @Override
@@ -105,11 +104,7 @@ public class EvolutionView extends MapView implements OnMapReadyCallback {
 
 
     private void drawFeatureEvolutions(Event event, final long from, final long to) {
-        int color = event.getColor();
-        int r = Color.red(color);
-        int b = Color.blue(color);
-        int g = Color.green(color);
-        int a = Color.alpha(color);
+        int color=0;
         List<GeoJsonFeature> geoJsonFeatures = loadGeoJsonFeatures();
         Collections.sort(geoJsonFeatures, new Comparator<GeoJsonFeature>() {
             @Override
@@ -128,6 +123,16 @@ public class EvolutionView extends MapView implements OnMapReadyCallback {
         });
         GeoJsonPolygonStyle style;
         for (GeoJsonFeature geoJsonFeature : geoJsonFeatures) {
+            if(geoJsonFeature.getProperty(GoogleView.STATUS_PROPERTY_NAME.toLowerCase()).equalsIgnoreCase(GoogleView.STATUS_ERASED)){
+                color = Color.GRAY;
+            } else{
+                color = event.getColor();
+            }
+            int r = Color.red(color);
+            int b = Color.blue(color);
+            int g = Color.green(color);
+            int a = Color.alpha(color);
+
             style = new GeoJsonPolygonStyle();
             style.setStrokeColor(Color.argb(a, r, g, b));
             style.setFillColor(Color.argb(a, r, g, b));
