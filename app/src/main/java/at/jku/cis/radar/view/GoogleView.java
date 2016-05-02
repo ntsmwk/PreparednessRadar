@@ -55,16 +55,17 @@ import retrofit.Callback;
 import retrofit.RetrofitError;
 import retrofit.client.Response;
 
-
 public class GoogleView extends MapView implements OnMapReadyCallback, EventTreeFragment.EventClickListener, GoogleMap.OnMapLongClickListener {
     public static String STATUS_PROPERTY_NAME = "status";
     public static String STATUS_CREATED = "created";
     public static String STATUS_ERASED = "erased";
     private final String TAG = "GoogleView";
+
     private GoogleMap googleMap;
     private boolean paintingEnabled = false;
     private PenSetting penSetting = new PenSetting();
     private ApplicationMode applicationMode = ApplicationMode.CREATING;
+
     private GeoJsonFeature currentFeature;
     private GeoJsonGeometryBuilder geoJsonGeometryBuilder;
     private Map<Event, GeoJsonLayer> event2GeoJsonLayer = new HashMap<>();
@@ -85,7 +86,9 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     private void setCurrentFeature(GeoJsonFeature currentFeature) {
         FeatureStyleService featureStyleService = new FeatureStyleService();
         int color = penSetting.getEvent().getColor();
-        if (currentFeature == null) {
+        if (this.currentFeature == null && currentFeature == null) {
+            return;
+        } else if (currentFeature == null) {
             this.currentFeature.setPointStyle(featureStyleService.createDefaultPointStyle(color));
             this.currentFeature.setPolygonStyle(featureStyleService.createDefaultPolygonStyle(color));
             this.currentFeature.setLineStringStyle(featureStyleService.createDefaultLineStringStyle(color));
@@ -173,6 +176,15 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
                 break;
         }
     }
+
+    public void onContextMenuClosed() {
+        switch (applicationMode) {
+            case CREATING:
+                setCurrentFeature(null);
+                break;
+        }
+    }
+
 
     @Override
     public void handleEventLoaded(Event event) {
@@ -482,7 +494,6 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         getCorrespondingGeoJsonLayer().removeLayerFromMap();
         getCorrespondingGeoJsonLayer().addLayerToMap();
     }
-
 
     private class GetFeaturesTask extends AsyncTask<Void, Void, JSONObject> {
 
