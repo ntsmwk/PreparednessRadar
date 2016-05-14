@@ -95,7 +95,8 @@ public class LoginActivity extends AppCompatActivity {
                 Credentials credentials = new Credentials();
                 credentials.setUsername(username);
                 credentials.setPassword(toMd5HexString(password));
-                authenticationToken = RestServiceGenerator.createService(AuthenticationRestApi.class).authenticate(credentials);
+                AuthenticationRestApi authenticationRestApi = createAuthenticationService();
+                authenticationToken = authenticationRestApi.authenticate(credentials);
             } catch (Exception ex) {
                 return false;
             }
@@ -120,6 +121,10 @@ public class LoginActivity extends AppCompatActivity {
             MessageDigest md = MessageDigest.getInstance("MD5");
             return String.format("%032X", new BigInteger(1, md.digest(value.getBytes())));
         }
+    }
+
+    private AuthenticationRestApi createAuthenticationService() {
+        return RestServiceGenerator.createService(AuthenticationRestApi.class);
     }
 }
 

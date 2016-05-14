@@ -6,10 +6,9 @@ import retrofit.RestAdapter;
 
 public class RestServiceGenerator {
 
-    private static final String BASE_URL = "http://192.168.43.48:8080/rest";
+    private static final String BASE_URL = "http://10.0.0.32:8080/rest";
 
-    private static RestAdapter.Builder builder = new RestAdapter.Builder()
-            .setEndpoint(BASE_URL).setConverter(new RadarJacksonConverter());
+    private static RestAdapter.Builder builder = new RestAdapter.Builder().setEndpoint(BASE_URL);
 
     public static <S> S createService(Class<S> serviceClass) {
         return createService(serviceClass, null);
@@ -25,6 +24,6 @@ public class RestServiceGenerator {
             });
         }
 
-        return builder.build().create(serviceClass);
+        return builder.setConverter(new RadarJacksonConverter()).build().create(serviceClass);
     }
 }
