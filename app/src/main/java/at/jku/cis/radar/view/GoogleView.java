@@ -47,7 +47,7 @@ import at.jku.cis.radar.rest.RestServiceGenerator;
 import at.jku.cis.radar.service.FeatureStyleService;
 import at.jku.cis.radar.service.GeoJsonFeatureBuilder;
 import at.jku.cis.radar.service.GeoJsonGeometryBuilder;
-import at.jku.cis.radar.service.GeoJsonIntersectionRemover;
+import at.jku.cis.radar.service.GeoJsonDifferenceRemover;
 import at.jku.cis.radar.transformer.GeoJsonFeature2JsonObjectTransformer;
 import at.jku.cis.radar.transformer.GeoJsonGeometry2GeometryTransformer;
 import at.jku.cis.radar.transformer.Geometry2GeoJsonGeometryTransformer;
@@ -56,9 +56,9 @@ import retrofit.RetrofitError;
 import retrofit.client.Response;
 
 public class GoogleView extends MapView implements OnMapReadyCallback, EventTreeFragment.EventClickListener, GoogleMap.OnMapLongClickListener {
-    public static String STATUS_PROPERTY_NAME = "STATUS";
-    public static String STATUS_CREATED = "CREATED";
-    public static String STATUS_ERASED = "ERASED";
+    public static String STATUS_PROPERTY_NAME = "status";
+    public static String STATUS_CREATED = "created";
+    public static String STATUS_ERASED = "erased";
     private final String TAG = "GoogleView";
 
     private GoogleMap googleMap;
@@ -319,10 +319,10 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         addGeometryEvolution(geoJsonFeature);
 
         GeoJsonFeature intersectedFeature = buildFeature(geoJsonGeometry, properties, currentFeature.getPolygonStyle().getFillColor(), currentFeature.getId());
-        GeoJsonIntersectionRemover intersectionRemover = new GeoJsonIntersectionRemover(intersectedFeature, currentFeature.getGeometry());
-        intersectionRemover.intersectGeoJsonFeatures();
+        GeoJsonDifferenceRemover differenceRemover = new GeoJsonDifferenceRemover(intersectedFeature, currentFeature.getGeometry());
+        differenceRemover.removeDifference();
 
-        for (GeoJsonFeature feature : intersectionRemover.getAddList()) {
+        for (GeoJsonFeature feature : differenceRemover.getAddList()) {
             GeoJsonFeature addedFeature = buildFeature((GeoJsonGeometryCollection) feature.getGeometry(), properties, currentFeature.getPolygonStyle().getFillColor(), currentFeature.getId());
             saveEvolvedFeature(addedFeature);
         }
@@ -343,26 +343,25 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         return featureBuilder.build(id);
     }
 
-    private void doCreateModeErasing(Iterable<GeoJsonFeature> geoJsonFeatures, GeoJsonGeometryCollection geoJsonGeometry) {
-        GeoJsonIntersectionRemover geoJsonIntersectionRemover = new GeoJsonIntersectionRemover(geoJsonFeatures, geoJsonGeometry.getGeometries().get(0));
-        geoJsonIntersectionRemover.intersectGeoJsonFeatures();
-        removeFeature(geoJsonIntersectionRemover);
+    private void doCreateModeErasing(Iterable<GeoJsonFeature> geoJsonFeatures, GeoJsonGeometryCollection geoJsonGeometryCollection) {
+        GeoJsonDifferenceRemover geoJsonDifferenceRemover = new GeoJsonDifferenceRemover(geoJsonFeatures, geoJsonGeometryCollection.getGeometries().get(0));
+        geoJsonDifferenceRemover.removeDifference();
+        removeFeature(geoJsonDifferenceRemover);
 
-        for (GeoJsonFeature geoJsonFeature : geoJsonIntersectionRemover.getRemoveList()) {
+        for (GeoJsonFeature geoJsonFeature : geoJsonDifferenceRemover.getRemoveList()) {
             saveEditedFeature(geoJsonFeature);
         }
     }
 
-
     private void doEditModeErasing(GeoJsonGeometryCollection geoJsonGeometry) {
-        GeoJsonIntersectionRemover geoJsonIntersectionRemover = new GeoJsonIntersectionRemover(Collections.singletonList(currentFeature), geoJsonGeometry.getGeometries().get(0));
-        geoJsonIntersectionRemover.intersectGeoJsonFeatures();
+        GeoJsonDifferenceRemover geoJsonDifferenceRemover = new GeoJsonDifferenceRemover(Collections.singletonList(currentFeature), geoJsonGeometry.getGeometries().get(0));
+        geoJsonDifferenceRemover.removeDifference();
         GeoJsonGeometryCollection newGeometryCollection = new GeoJsonGeometryCollection(new ArrayList<GeoJsonGeometry>());
-        if (!geoJsonIntersectionRemover.getAddList().isEmpty()) {
-            newGeometryCollection = (GeoJsonGeometryCollection) geoJsonIntersectionRemover.getAddList().get(0).getGeometry();
+        if (!geoJsonDifferenceRemover.getAddList().isEmpty()) {
+            newGeometryCollection = (GeoJsonGeometryCollection) geoJsonDifferenceRemover.getAddList().get(0).getGeometry();
         }
         removeGeometryEdit(newGeometryCollection);
-        for (GeoJsonFeature geoJsonFeature : geoJsonIntersectionRemover.getRemoveList()) {
+        for (GeoJsonFeature geoJsonFeature : geoJsonDifferenceRemover.getRemoveList()) {
             saveEditedFeature(geoJsonFeature);
         }
     }
@@ -373,16 +372,14 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     }
 
     private void doEvolveModeErasing(GeoJsonGeometryCollection geoJsonGeometry) {
-
         HashMap<String, String> properties = new HashMap<>();
         properties.put(STATUS_PROPERTY_NAME, STATUS_ERASED);
-        GeoJsonIntersectionRemover geoJsonIntersectionRemover = new GeoJsonIntersectionRemover(Collections.singletonList(currentFeature), geoJsonGeometry.getGeometries().get(0));
-        geoJsonIntersectionRemover.intersectGeoJsonFeatures();
+        GeoJsonDifferenceRemover geoJsonDifferenceRemover = new GeoJsonDifferenceRemover(Collections.singletonList(currentFeature), geoJsonGeometry.getGeometries().get(0));
+        geoJsonDifferenceRemover.removeDifference();
 
-        removeGeometryEvolution(geoJsonIntersectionRemover);
+        removeGeometryEvolution(geoJsonDifferenceRemover);
 
-
-        for (GeoJsonFeature geoJsonFeature : geoJsonIntersectionRemover.getRemoveList()) {
+        for (GeoJsonFeature geoJsonFeature : geoJsonDifferenceRemover.getRemoveList()) {
             saveEvolvedFeature(geoJsonFeature);
         }
     }
@@ -468,16 +465,16 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         return event2GeoJsonLayer.get(penSetting.getEvent());
     }
 
-    private void removeGeometryEvolution(GeoJsonIntersectionRemover geoJsonIntersectionRemover) {
-        removeFeaturesFromLayer(Collections.singletonList(currentFeature));
-        addFeatureToLayer(geoJsonIntersectionRemover);
+    private void removeGeometryEvolution(GeoJsonDifferenceRemover geoJsonDifferenceRemover) {
+        removeFeaturesFromLayer(geoJsonDifferenceRemover.getPrevList());
+        addFeatureToLayer(geoJsonDifferenceRemover);
         refreshLayer();
     }
 
 
-    private void removeFeature(GeoJsonIntersectionRemover geoJsonIntersectionRemover) {
-        removeFeaturesFromLayer(geoJsonIntersectionRemover.getPrevList());
-        addFeatureToLayer(geoJsonIntersectionRemover);
+    private void removeFeature(GeoJsonDifferenceRemover geoJsonDifferenceRemover) {
+        removeFeaturesFromLayer(geoJsonDifferenceRemover.getPrevList());
+        addFeatureToLayer(geoJsonDifferenceRemover);
         refreshLayer();
     }
 
@@ -487,8 +484,8 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         }
     }
 
-    private void addFeatureToLayer(GeoJsonIntersectionRemover geoJsonIntersectionRemover) {
-        for (GeoJsonFeature feature : geoJsonIntersectionRemover.getAddList()) {
+    private void addFeatureToLayer(GeoJsonDifferenceRemover geoJsonDifferenceRemover) {
+        for (GeoJsonFeature feature : geoJsonDifferenceRemover.getAddList()) {
             getCorrespondingGeoJsonLayer().addFeature(feature);
         }
     }
