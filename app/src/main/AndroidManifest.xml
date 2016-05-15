@@ -38,11 +38,9 @@
 
         <activity
             android:name=".activity.LoginActivity"
-            android:label="@string/title_activity_login"
-            android:windowSoftInputMode="adjustResize|stateVisible" >
+            android:label="@string/title_activity_radar">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
-
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
@@ -53,6 +51,8 @@
         <activity
             android:name=".activity.EvolutionActivity"
             android:label="@string/title_activity_radar" />
+        <activity
+            android:name=".activity.FeatureDetailActivity"
+            android:label="@string/title_activity_radar"></activity>
     </application>
-
 </manifest>

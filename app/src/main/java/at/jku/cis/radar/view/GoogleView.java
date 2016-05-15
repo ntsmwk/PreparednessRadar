@@ -35,6 +35,7 @@ import java.util.concurrent.ExecutionException;
 
 import at.jku.cis.radar.R;
 import at.jku.cis.radar.activity.EvolutionActivity;
+import at.jku.cis.radar.activity.FeatureDetailActivity;
 import at.jku.cis.radar.activity.RadarActivity;
 import at.jku.cis.radar.geometry.GeometryUtils;
 import at.jku.cis.radar.model.ApplicationMode;
@@ -45,9 +46,9 @@ import at.jku.cis.radar.model.PenSetting;
 import at.jku.cis.radar.rest.FeaturesRestApi;
 import at.jku.cis.radar.rest.RestServiceGenerator;
 import at.jku.cis.radar.service.FeatureStyleService;
+import at.jku.cis.radar.service.GeoJsonDifferenceRemover;
 import at.jku.cis.radar.service.GeoJsonFeatureBuilder;
 import at.jku.cis.radar.service.GeoJsonGeometryBuilder;
-import at.jku.cis.radar.service.GeoJsonDifferenceRemover;
 import at.jku.cis.radar.transformer.GeoJsonFeature2JsonObjectTransformer;
 import at.jku.cis.radar.transformer.GeoJsonGeometry2GeometryTransformer;
 import at.jku.cis.radar.transformer.Geometry2GeoJsonGeometryTransformer;
@@ -149,7 +150,8 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
                 menu.add(NO_ID, 1, 0, R.string.edit);
                 break;
         }
-        menu.add(NO_ID, 3, 0, R.string.evolution);
+        menu.add(NO_ID, 3, 0, R.string.details);
+        menu.add(NO_ID, 4, 0, R.string.evolution);
         super.onCreateContextMenu(menu);
     }
 
@@ -167,14 +169,26 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
                 break;
             case 3:
                 GoogleView.this.applicationMode = ApplicationMode.CREATING;
-                Intent intent = new Intent(getContext(), EvolutionActivity.class);
-                intent.putExtra("event", penSetting.getEvent());
+                Intent intent = new Intent(getContext(), FeatureDetailActivity.class);
                 intent.putExtra("featureId", currentFeature.getId());
                 intent.putExtra("token", determineToken());
+                startActivity(intent);
                 setCurrentFeature(null);
-                ((RadarActivity) getContext()).startActivity(intent);
+                break;
+            case 4:
+                GoogleView.this.applicationMode = ApplicationMode.CREATING;
+                Intent evolutionIntent = new Intent(getContext(), EvolutionActivity.class);
+                evolutionIntent.putExtra("event", penSetting.getEvent());
+                evolutionIntent.putExtra("featureId", currentFeature.getId());
+                evolutionIntent.putExtra("token", determineToken());
+                startActivity(evolutionIntent);
+                setCurrentFeature(null);
                 break;
         }
+    }
+
+    private void startActivity(Intent intent) {
+        ((RadarActivity) getContext()).startActivity(intent);
     }
 
     public void onContextMenuClosed() {
