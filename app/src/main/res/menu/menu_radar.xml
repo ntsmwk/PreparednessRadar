@@ -4,16 +4,6 @@
     xmlns:tools="http://schemas.android.com/tools"
     tools:context=".RadarActivity">
 
-    <!--<item
-        android:id="@+id/evolve"
-        android:orderInCategory="100"
-        android:title="@string/create"
-        app:showAsAction="always" />
-    <item
-        android:id="@+id/edit"
-        android:orderInCategory="100"
-        android:title="@string/create"
-        app:showAsAction="always" />-->
     <item
         android:id="@+id/marker"
         android:icon="@drawable/markernotselected"

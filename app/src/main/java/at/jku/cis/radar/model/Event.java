@@ -9,18 +9,9 @@ public class Event implements Serializable {
     private int color;
     private boolean selected;
     private boolean visible = true;
+
     private List<Event> events;
     private List<Action> actions;
-
-    public Event() {
-    }
-
-    public Event(String name, int color, List<Event> events, List<Action> actions) {
-        this.name = name;
-        this.color = color;
-        this.events = events;
-        this.actions = actions;
-    }
 
     public long getId() {
         return id;

@@ -2,7 +2,13 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context=".RadarActivity">
+    tools:context=".EvolutionActivityContext">
+
+    <item
+        android:id="@+id/edit"
+        android:orderInCategory="100"
+        android:title="@string/edit"
+        app:showAsAction="always" />
 
     <item
         android:id="@+id/back"

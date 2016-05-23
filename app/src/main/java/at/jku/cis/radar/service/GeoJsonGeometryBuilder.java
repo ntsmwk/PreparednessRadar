@@ -6,7 +6,6 @@ import com.google.maps.android.geojson.GeoJsonGeometryCollection;
 import com.google.maps.android.geojson.GeoJsonLineString;
 import com.google.maps.android.geojson.GeoJsonPoint;
 import com.google.maps.android.geojson.GeoJsonPolygon;
-import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryCollection;
 import com.vividsolutions.jts.geom.GeometryFactory;
 import com.vividsolutions.jts.geom.MultiPolygon;
@@ -24,7 +23,6 @@ import at.jku.cis.radar.transformer.Geometry2GeoJsonGeometryTransformer;
 public class GeoJsonGeometryBuilder {
     private DrawType drawType;
     private List<LatLng> coordinates = new ArrayList<>();
-    private boolean simplify = true;
 
     public GeoJsonGeometryBuilder(DrawType drawType) {
         this.drawType = drawType;

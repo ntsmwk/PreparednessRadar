@@ -1,14 +1,15 @@
 package at.jku.cis.radar.model;
 
-public class GeoJsonContent {
+import java.io.Serializable;
+
+public class GeoJsonContent implements Serializable {
     private String title;
-    private String event;
     private long featureGroup;
+    private Event event;
     private String description;
     private String creator;
     private String modifier;
     private String creationDate;
-
     private String modifiedDate;
 
     public String getTitle() {
@@ -19,11 +20,11 @@ public class GeoJsonContent {
         this.title = title;
     }
 
-    public String getEvent() {
+    public Event getEvent() {
         return event;
     }
 
-    public void setEvent(String event) {
+    public void setEvent(Event event) {
         this.event = event;
     }
 
