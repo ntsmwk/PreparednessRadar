@@ -104,45 +104,68 @@ public class EvolutionView extends MapView implements OnMapReadyCallback {
 
 
     private void drawFeatureEvolutions(Event event, final long from, final long to) {
-        int color=0;
+
+
         List<GeoJsonFeature> geoJsonFeatures = loadGeoJsonFeatures();
-        Collections.sort(geoJsonFeatures, new Comparator<GeoJsonFeature>() {
-            @Override
-            public int compare(GeoJsonFeature lhs, GeoJsonFeature rhs) {
-                return (int) (Long.parseLong(rhs.getProperty("date")) - Long.parseLong(lhs.getProperty("date")));
+        sortList(geoJsonFeatures);
+        filterList(from, to, geoJsonFeatures);
+
+        GeoJsonPolygonStyle style;
+        float zIndex = 1.0f;
+        float diff = 1.0f / geoJsonFeatures.size();
+        int eventColor = event.getColor();
+        int grayColor = Color.GRAY;
+
+        for (GeoJsonFeature geoJsonFeature : geoJsonFeatures) {
+            int color;
+            if (geoJsonFeature.getProperty(GoogleView.STATUS_PROPERTY_NAME.toLowerCase()).equalsIgnoreCase(GoogleView.STATUS_ERASED)) {
+                color = grayColor;
+            } else {
+                color = eventColor;
             }
-        });
+            style = new GeoJsonPolygonStyle();
+            style.setStrokeColor(color);
+            style.setFillColor(color);
+            style.setZIndex(zIndex);
+            geoJsonFeature.setPolygonStyle(style);
+
+            geoJsonLayer.addFeature(geoJsonFeature);
+            zIndex -= diff;
+            eventColor = reduceColor(eventColor);
+            grayColor = reduceColor(grayColor);
+        }
+    }
+
+    private void filterList(final long from, final long to, List<GeoJsonFeature> geoJsonFeatures) {
         CollectionUtils.filter(geoJsonFeatures, new Predicate<GeoJsonFeature>() {
             @Override
             public boolean evaluate(GeoJsonFeature object) {
-                if ((Long.parseLong(object.getProperty("date")) > from) && (Long.parseLong(object.getProperty("date")) < to)) {
+                if ((Long.parseLong(object.getProperty("creation_date")) > from) && (Long.parseLong(object.getProperty("creation_date")) < to)) {
                     return true;
                 }
                 return false;
             }
         });
-        GeoJsonPolygonStyle style;
-        for (GeoJsonFeature geoJsonFeature : geoJsonFeatures) {
-            if(geoJsonFeature.getProperty(GoogleView.STATUS_PROPERTY_NAME.toLowerCase()).equalsIgnoreCase(GoogleView.STATUS_ERASED)){
-                color = Color.GRAY;
-            } else{
-                color = event.getColor();
-            }
-            int r = Color.red(color);
-            int b = Color.blue(color);
-            int g = Color.green(color);
-            int a = Color.alpha(color);
+    }
 
-            style = new GeoJsonPolygonStyle();
-            style.setStrokeColor(Color.argb(a, r, g, b));
-            style.setFillColor(Color.argb(a, r, g, b));
-            geoJsonFeature.setPolygonStyle(style);
-            r = (int) (r * 0.9);
-            g = (int) (g * 0.9);
-            b = (int) (b * 0.9);
-            a = (int) (a * 0.9);
-            geoJsonLayer.addFeature(geoJsonFeature);
-        }
+    private void sortList(List<GeoJsonFeature> geoJsonFeatures) {
+        Collections.sort(geoJsonFeatures, new Comparator<GeoJsonFeature>() {
+            @Override
+            public int compare(GeoJsonFeature lhs, GeoJsonFeature rhs) {
+                return (int) (Long.parseLong(rhs.getProperty("creation_date")) - Long.parseLong(lhs.getProperty("creation_date")));
+            }
+        });
+    }
+
+    private int reduceColor(int color){
+        int r = Color.red(color);
+        int b = Color.blue(color);
+        int g = Color.green(color);
+        int a = Color.alpha(color);
+        r = (int) (r * 0.9);
+        g = (int) (g * 0.9);
+        b = (int) (b * 0.9);
+        return Color.argb(a,r,g,b);
     }
 
     private List<GeoJsonFeature> loadGeoJsonFeatures() {

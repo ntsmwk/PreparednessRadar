@@ -188,7 +188,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     }
 
     private void startActivity(Intent intent) {
-        ((RadarActivity) getContext()).startActivity(intent);
+            ((RadarActivity) getContext()).startActivity(intent);
     }
 
     public void onContextMenuClosed() {
@@ -393,7 +393,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
         removeGeometryEvolution(geoJsonDifferenceRemover);
 
-        for (GeoJsonFeature geoJsonFeature : geoJsonDifferenceRemover.getRemoveList()) {
+        for (GeoJsonFeature geoJsonFeature : geoJsonDifferenceRemover.getIntersectionList()) {
             saveEvolvedFeature(geoJsonFeature);
         }
     }
