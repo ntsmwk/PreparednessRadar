@@ -2,6 +2,7 @@ package at.jku.cis.radar.view;
 
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Color;
 import android.graphics.Point;
 import android.os.AsyncTask;
 import android.util.AttributeSet;
@@ -20,7 +21,9 @@ import com.google.maps.android.geojson.GeoJsonFeature;
 import com.google.maps.android.geojson.GeoJsonGeometry;
 import com.google.maps.android.geojson.GeoJsonGeometryCollection;
 import com.google.maps.android.geojson.GeoJsonLayer;
+import com.google.maps.android.geojson.GeoJsonLineStringStyle;
 import com.google.maps.android.geojson.GeoJsonPoint;
+import com.google.maps.android.geojson.GeoJsonPolygonStyle;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryCollection;
 
@@ -31,7 +34,9 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Date;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 
 import at.jku.cis.radar.R;
 import at.jku.cis.radar.activity.EvolutionActivity;
@@ -61,6 +66,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     public static String STATUS_CREATED = "created";
     public static String STATUS_ERASED = "erased";
     private final String TAG = "GoogleView";
+    private final int EXPIRED_PERIOD = 5;
 
     private GoogleMap googleMap;
     private boolean paintingEnabled = false;
@@ -70,6 +76,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     private GeoJsonFeature currentFeature;
     private GeoJsonGeometryBuilder geoJsonGeometryBuilder;
     private Map<Event, GeoJsonLayer> event2GeoJsonLayer = new HashMap<>();
+    private Map<String, Date> id2LastModifiedDateMap = new HashMap<>();
     private Projection googleMapProjection;
 
     public GoogleView(Context context, AttributeSet attrs) {
@@ -86,10 +93,30 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
     private void setCurrentFeature(GeoJsonFeature currentFeature) {
         FeatureStyleService featureStyleService = new FeatureStyleService();
-        int color = penSetting.getEvent().getColor();
+
+        int color;
+        GeoJsonFeature currFeature = null;
+        if(this.currentFeature != null){
+            currFeature = this.currentFeature;
+        }else if(currentFeature != null){
+            currFeature = currentFeature;
+        }
+        if(currFeature != null && id2LastModifiedDateMap.containsKey(currFeature.getId())) {
+            long diff = new Date().getTime() - id2LastModifiedDateMap.get(currFeature.getId()).getTime();
+
+            if (TimeUnit.MILLISECONDS.toMinutes(diff) > EXPIRED_PERIOD) {
+                color = Color.WHITE;
+            } else {
+                color = penSetting.getEvent().getColor();
+            }
+        }else{
+            color = penSetting.getEvent().getColor();
+        }
+
         if (this.currentFeature == null && currentFeature == null) {
             return;
         } else if (currentFeature == null) {
+
             this.currentFeature.setPointStyle(featureStyleService.createDefaultPointStyle(color));
             this.currentFeature.setPolygonStyle(featureStyleService.createDefaultPolygonStyle(color));
             this.currentFeature.setLineStringStyle(featureStyleService.createDefaultLineStringStyle(color));
@@ -225,6 +252,24 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         GeoJsonLayer geoJsonLayer = findGeoJsonLayerByEvent(event);
         if (event.isSelected()) {
             geoJsonLayer.addLayerToMap();
+            for(GeoJsonFeature feature : geoJsonLayer.getFeatures()) {
+                if (!id2LastModifiedDateMap.containsKey(feature.getId())) {
+                    id2LastModifiedDateMap.put(feature.getId(), new Date(Long.parseLong(feature.getProperty("date"))));
+                }
+                if (id2LastModifiedDateMap.containsKey(feature.getId())) {
+                    long diff = new Date().getTime() - id2LastModifiedDateMap.get(feature.getId()).getTime();
+                    if (TimeUnit.MILLISECONDS.toMinutes(diff) > EXPIRED_PERIOD) {
+                        GeoJsonPolygonStyle polygonStyle = new GeoJsonPolygonStyle();
+                        polygonStyle.setFillColor(Color.WHITE);
+                        polygonStyle.setStrokeColor(feature.getPolygonStyle().getFillColor());
+                        feature.setPolygonStyle(polygonStyle);
+
+                        GeoJsonLineStringStyle lineStringStyle = new GeoJsonLineStringStyle();
+                        lineStringStyle.setColor(Color.WHITE);
+                        feature.setLineStringStyle(lineStringStyle);
+                    }
+                }
+            }
         }
         paintingEnabled = event.isSelected();
         penSetting.setEvent(event);
@@ -291,13 +336,10 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         }
         geoJsonGeometryBuilder.addCoordinate(googleMapProjection.fromScreenLocation(point));
         if (MotionEvent.ACTION_UP == action) {
-            GeoJsonLayer geoJsonLayer = getCorrespondingGeoJsonLayer();
             GeoJsonGeometryCollection geoJsonGeometry = geoJsonGeometryBuilder.build();
-            if (ApplicationMode.CREATING == applicationMode) {
-                doCreateModeErasing(geoJsonLayer.getFeatures(), geoJsonGeometry);
-            } else if (ApplicationMode.EDITING == applicationMode) {
+            if (ApplicationMode.EDITING == applicationMode) {
                 doEditModeErasing(geoJsonGeometry);
-            } else {
+            } else if(ApplicationMode.EVOLVING == applicationMode){
                 doEvolveModeErasing(geoJsonGeometry);
             }
         }
@@ -342,6 +384,21 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         }
 
         setCurrentFeature(geoJsonFeature);
+        setDefaultPenSettings();
+
+        if(id2LastModifiedDateMap.containsKey(currentFeature.getId())){
+            id2LastModifiedDateMap.remove(currentFeature.getId());
+        }
+        if(currentFeature.getId() != null){
+            id2LastModifiedDateMap.put(currentFeature.getId(), new Date());
+        }
+    }
+
+    private void setDefaultPenSettings() {
+        int color = penSetting.getEvent().getColor();
+        FeatureStyleService featureStyleService = new FeatureStyleService();
+        this.currentFeature.setPolygonStyle(featureStyleService.createDefaultPolygonStyle(color));
+        this.currentFeature.setLineStringStyle(featureStyleService.createDefaultLineStringStyle(color));
     }
 
     private void addGeometryEvolution(GeoJsonFeature geoJsonFeature) {
@@ -355,16 +412,6 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         featureBuilder.setColor(color);
         featureBuilder.setProperties(properties);
         return featureBuilder.build(id);
-    }
-
-    private void doCreateModeErasing(Iterable<GeoJsonFeature> geoJsonFeatures, GeoJsonGeometryCollection geoJsonGeometryCollection) {
-        GeoJsonDifferenceRemover geoJsonDifferenceRemover = new GeoJsonDifferenceRemover(geoJsonFeatures, geoJsonGeometryCollection.getGeometries().get(0));
-        geoJsonDifferenceRemover.removeDifference();
-        removeFeature(geoJsonDifferenceRemover);
-
-        for (GeoJsonFeature geoJsonFeature : geoJsonDifferenceRemover.getRemoveList()) {
-            saveEditedFeature(geoJsonFeature);
-        }
     }
 
     private void doEditModeErasing(GeoJsonGeometryCollection geoJsonGeometry) {
@@ -396,6 +443,8 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         for (GeoJsonFeature geoJsonFeature : geoJsonDifferenceRemover.getIntersectionList()) {
             saveEvolvedFeature(geoJsonFeature);
         }
+
+        setDefaultPenSettings();
 
     }
 

@@ -28,9 +28,8 @@ public class GeometryUtils {
         return false;
     }
 
-
-    //TODO test default union
     public static GeometryCollection union(GeometryCollection geometryCollection) {
+
         Geometry geometry;
         GeometryCollection collection = geometryCollection;
         int unionTries = 0;
@@ -62,6 +61,7 @@ public class GeometryUtils {
             collection = convexHull(collection);
         }
         return collection;
+
     }
 
     private static GeometryCollection convexHull(Geometry geometry){

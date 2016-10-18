@@ -44,6 +44,7 @@ public class GeoJsonGeometryBuilder {
         }
         GeometryCollection geometryCollection = (GeometryCollection) (new GeoJsonGeometry2GeometryTransformer().transform(geoJsonGeometryCollection));
         return (GeoJsonGeometryCollection) new Geometry2GeoJsonGeometryTransformer().transform(GeometryUtils.union(geometryCollection));
+
     }
 
     private GeoJsonGeometry createGeoJsonPolygon() {
