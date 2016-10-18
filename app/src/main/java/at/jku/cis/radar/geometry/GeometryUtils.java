@@ -28,6 +28,8 @@ public class GeometryUtils {
         return false;
     }
 
+
+    //TODO test default union
     public static GeometryCollection union(GeometryCollection geometryCollection) {
         Geometry geometry;
         GeometryCollection collection = geometryCollection;

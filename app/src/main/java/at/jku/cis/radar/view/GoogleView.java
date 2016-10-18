@@ -258,7 +258,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
 
     private void dispatchStylusTouchEvent(MotionEvent motionEvent) {
         Point point = new Point((int) motionEvent.getX(), (int) motionEvent.getY());
-
+        
         if (PenMode.ERASING == penSetting.getPenMode()) {
             doErasing(motionEvent.getAction(), point);
         } else {
@@ -396,6 +396,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
         for (GeoJsonFeature geoJsonFeature : geoJsonDifferenceRemover.getIntersectionList()) {
             saveEvolvedFeature(geoJsonFeature);
         }
+
     }
 
 
@@ -501,6 +502,7 @@ public class GoogleView extends MapView implements OnMapReadyCallback, EventTree
     private void addFeatureToLayer(GeoJsonDifferenceRemover geoJsonDifferenceRemover) {
         for (GeoJsonFeature feature : geoJsonDifferenceRemover.getAddList()) {
             getCorrespondingGeoJsonLayer().addFeature(feature);
+            setCurrentFeature(feature);
         }
     }
 
